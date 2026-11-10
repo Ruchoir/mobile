@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# Publish one released version of the Android app on the website's server: the only thing the CI may
+# do here for the phone app (AGENTS.md, "Releasing").
+#
+# Installed as /usr/local/sbin/android-publish (root, 0755), reached through the `deploy` account
+# whose Android key is bound to android-publish-entry:
+#
+#   ssh deploy@<server> v1.2.3 < release.tar
+#
+# The archive holds, at its root, `ruchoir-<version>.apk`, `SHA256SUMS.txt`, `SHA256SUMS.txt.asc`
+# and `latest.json`. They go to /srv/ruchoir-android/<version>/, then latest.json is put in place at
+# the top, last, so nothing points at a file not there yet. nginx serves the folder as
+# https://ruchoir.com/android/. Older versions stay.
+set -euo pipefail
+
+ROOT="${ANDROID_ROOT:-/srv/ruchoir-android}"
+LOG="/var/log/android-publish.log"
+MAX_BYTES=$((512 * 1024 * 1024))
+
+version="${1:-}"
+if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+  echo "usage: android-publish vMAJOR.MINOR.PATCH[-pre] < release.tar" >&2
+  exit 2
+fi
+plain="${version#v}"
+
+exec > >(tee -a "$LOG") 2>&1
+echo "=== $(date -u +%FT%TZ) publishing $version"
+exec 9>/run/android-publish.lock
+flock -n 9 || { echo "another publication is running" >&2; exit 1; }
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+head -c "$((MAX_BYTES + 1))" > "$work/release.tar"
+[ "$(stat -c %s "$work/release.tar")" -le "$MAX_BYTES" ] || { echo "release too large" >&2; exit 1; }
+# Plain files at the root only, with the names a release has: nothing else may be placed.
+allowed='^\./$|^(\./)?[A-Za-z0-9._+-]+\.(apk|json|txt|asc)$'
+tar -tf "$work/release.tar" > "$work/names" || { echo "not a tar archive" >&2; exit 1; }
+if grep -vE "$allowed" "$work/names" | grep -q .; then
+  echo "the release holds files it may not place" >&2
+  exit 1
+fi
+mkdir "$work/stage"
+tar -xf "$work/release.tar" -C "$work/stage" --no-same-owner --no-same-permissions
+for needed in latest.json "ruchoir-$plain.apk" SHA256SUMS.txt SHA256SUMS.txt.asc; do
+  [ -f "$work/stage/$needed" ] || { echo "the release has no $needed" >&2; exit 1; }
+done
+grep -q "\"version\": *\"$plain\"" "$work/stage/latest.json" || { echo "latest.json is not for $version" >&2; exit 1; }
+
+target="$ROOT/$version"
+mkdir -p "$target"
+find "$work/stage" -maxdepth 1 -type f ! -name latest.json -exec install -m 0644 {} "$target/" \;
+install -m 0644 "$work/stage/latest.json" "$ROOT/.latest.json.new"
+mv -f "$ROOT/.latest.json.new" "$ROOT/latest.json"
+echo "=== $(date -u +%FT%TZ) $version published"

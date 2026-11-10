@@ -11,3 +11,13 @@ permissions:
 jobs:
   conventions:
     uses: Ruchoir/.github/.github/workflows/conventions.yml@v1
+
+  # Lint, types and unit tests of the app.
+  node:
+    uses: Ruchoir/.github/.github/workflows/node.yml@v1.13.0
+    permissions:
+      contents: read
+      packages: read
+    with:
+      scripts: lint typecheck test
+      github-packages: true
