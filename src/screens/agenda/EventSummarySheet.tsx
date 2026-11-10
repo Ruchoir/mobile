@@ -246,7 +246,7 @@ export function EventSummary({
                 {tally}
               </Text>
             ) : null}
-            {e.organizer ? (
+            {e.organizer && (e.organizer.name || e.organizer.userId === me?.id) ? (
               <Text variant="small" tone="muted">
                 {t("calendar.organizedBy", { name: e.organizer.userId === me?.id ? t("calendar.me") : e.organizer.name })}
               </Text>

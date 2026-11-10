@@ -1,10 +1,10 @@
 /**
  * What the phone decides about guests' access, without drawing anything: where a guest notice leads
  * (from the list or from a tap, the same data), when a guest's own access shows its banner and its
- * warning card. The wording and the dates come from `@ruchoir/client/permissionsLogic`, shared with
+ * warning card. The wording and the dates come from `@ruchoir/permissions-logic`, shared with
  * the web.
  */
-import { daysLeft, endedNoticeKeys, endedSpaces, expiryTone, guestBanner, noticeTarget, SOON_DAYS } from "./shared/permissionsLogic/index.ts";
+import { daysLeft, endedNoticeKeys, endedSpaces, expiryTone, guestBanner, noticeTarget, SOON_DAYS } from "@ruchoir/permissions-logic";
 
 /** The two guest notices; a tap on either is handled by `tapTarget` from this data. */
 export function isGuestNotice(kind: string): boolean {

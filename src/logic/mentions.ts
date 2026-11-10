@@ -5,7 +5,7 @@
  * address), and a mention is the person's display name, whole, which is how the server resolves it.
  */
 
-import { foldMention, offeredBroadcasts, prepareGroupNames } from "./shared/permissionsLogic/index.ts";
+import { foldMention, offeredBroadcasts, prepareGroupNames } from "@ruchoir/permissions-logic";
 
 export type ActiveToken = { kind: "@" | "#"; query: string; start: number };
 

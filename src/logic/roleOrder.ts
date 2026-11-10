@@ -4,7 +4,7 @@
  * highest role), within that band; the others keep their place (`orderAllowed`, the web's rule, the
  * API being the judge). `order` is every ranked role's id, strongest first, base roles left out.
  */
-import { orderAllowed, type RoleLike } from "./shared/permissionsLogic/index.ts";
+import { orderAllowed, type RoleLike } from "@ruchoir/permissions-logic";
 
 type Direction = "up" | "down";
 

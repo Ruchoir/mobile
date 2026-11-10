@@ -4,7 +4,7 @@
  * keys under the notification's `body` (`targets/notifications`). Free of the native modules so Node
  * tests it.
  */
-import { noticeTarget } from "../logic/shared/permissionsLogic/index.ts";
+import { noticeTarget } from "@ruchoir/permissions-logic";
 
 /** One item of `GET /api/v1/push/pending`. */
 export type PendingItem = {

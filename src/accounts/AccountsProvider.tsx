@@ -22,6 +22,7 @@ import { AppState } from "react-native";
 import { clearDownloads } from "../files/cache";
 import { notifications } from "../push/native";
 import { forgetPhoneOn, refreshPhonePush, shareSessions } from "../push/phone";
+import { scheduleSessionRefresh } from "../push/refresh";
 import { refreshWidgets } from "../widgets";
 import { InstanceClients } from "./clients";
 import { invitationRoute } from "./invitation";
@@ -187,6 +188,25 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
     // Only the set of instances holding a session matters here, not their accounts' details.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heldKey, checking, registry !== null]);
+
+  // The tokens handed to the extensions are short-lived: written again each time the app comes back
+  // to the foreground, and by the background task the system runs now and then (`push/refresh.ts`).
+  const heldRef = useRef(held);
+  useEffect(() => {
+    if (!checking) heldRef.current = held;
+  });
+  const loaded = registry !== null;
+  useEffect(() => {
+    if (!loaded) return;
+    void scheduleSessionRefresh();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active" || heldRef.current.length === 0) return;
+      void shareSessions(heldRef.current.map((a) => ({ instance: a.instance })))
+        .then(refreshWidgets)
+        .catch(() => {});
+    });
+    return () => subscription.remove();
+  }, [loaded]);
 
 
   // The app's icon carries the unread notifications of every signed-in instance, as the bell does;

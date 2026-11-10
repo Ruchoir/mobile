@@ -36,7 +36,8 @@ export function createCalendarApi(transport: Transport) {
   async function setCalendarMe(id: string, me: { hidden?: boolean; reminders?: number[] | "default" }): Promise<void> {
     await apiPut<void>(`/calendars/${id}/me`, {
       hidden: me.hidden,
-      ...(me.reminders === "default" ? { reminder_default: true } : me.reminders !== undefined ? { reminders: me.reminders } : {}),
+      reminder_default: me.reminders === "default",
+      ...(Array.isArray(me.reminders) ? { reminders: me.reminders } : {}),
     });
   }
 
@@ -57,8 +58,9 @@ export function createCalendarApi(transport: Transport) {
 
   /** Whom the viewer's calendar is shared with. */
   async function listShares(calendarId: string, signal?: AbortSignal): Promise<Share[]> {
-    const rows = await apiGet<{ user_id: string; name: string; level: ShareLevel }[]>(`/calendars/${calendarId}/shares`, signal);
-    return rows.map((r) => ({ userId: r.user_id, name: r.name, level: r.level }));
+    // The calendar gives the account, not the name: the screens find it among the members.
+    const rows = await apiGet<{ user_id: string; level: ShareLevel; created_at: string }[]>(`/calendars/${calendarId}/shares`, signal);
+    return rows.map((r) => ({ userId: r.user_id, name: "", level: r.level }));
   }
 
   /** Open the viewer's calendar to someone, or change how far. */
@@ -108,7 +110,7 @@ export function createCalendarApi(transport: Transport) {
   /** The viewer's own reminders for an event (its whole series); `"default"` follows their calendar
    *  setting again. */
   async function setEventMe(id: string, reminders: number[] | "default"): Promise<void> {
-    await apiPut<void>(`/events/${id}/me`, reminders === "default" ? { reminder_default: true } : { reminders });
+    await apiPut<void>(`/events/${id}/me`, reminders === "default" ? { reminder_default: true } : { reminder_default: false, reminders });
   }
 
   async function listFeeds(signal?: AbortSignal): Promise<Feed[]> {
@@ -117,8 +119,8 @@ export function createCalendarApi(transport: Transport) {
 
   /** A new subscription address, for one calendar or (`null`) for all of them. Its URL is shown once. */
   async function createFeed(calendarId: string | null): Promise<CreatedFeed> {
-    const dto = await apiPost<FeedDto>("/calendar/feeds", { calendar_id: calendarId });
-    return { ...toFeed(dto), url: dto.url ?? "" };
+    const dto = await apiPost<FeedDto & { url: string }>("/calendar/feeds", { calendar_id: calendarId });
+    return { ...toFeed(dto), url: dto.url };
   }
 
   async function revokeFeed(id: string): Promise<void> {
@@ -138,11 +140,6 @@ export function createCalendarApi(transport: Transport) {
       signal,
     });
     return found.map((p) => ({ userId: p.user_id, busy: p.busy }));
-  }
-
-  /** Where someone invited by address downloads a file of the event, with their page's token. */
-  function invitationFileUrl(token: string, fileId: string): string {
-    return `${apiBase()}/public/invitation/${encodeURIComponent(token)}/files/${fileId}`;
   }
 
   /** A channel's next linked occurrences (three at most, within two months). */
@@ -172,7 +169,7 @@ export function createCalendarApi(transport: Transport) {
   }
 
   return {
-    listCalendars, createCalendar, updateCalendar, deleteCalendar, setCalendarMe, listOccurrences, listShares, putShare, deleteShare, printUrl, searchEvents, getEvent, createEvent, updateEvent, deleteEvent, setEventMe, listFeeds, createFeed, revokeFeed, respondToEvent, freeBusy, invitationFileUrl, listChannelEvents, readInvitation, answerInvitation,
+    listCalendars, createCalendar, updateCalendar, deleteCalendar, setCalendarMe, listOccurrences, listShares, putShare, deleteShare, printUrl, searchEvents, getEvent, createEvent, updateEvent, deleteEvent, setEventMe, listFeeds, createFeed, revokeFeed, respondToEvent, freeBusy, listChannelEvents, readInvitation, answerInvitation,
   };
 }
 

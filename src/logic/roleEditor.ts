@@ -14,7 +14,7 @@ import {
   viewAsState,
   type Edition,
   type UsedInRow,
-} from "./shared/permissionsLogic/index.ts";
+} from "@ruchoir/permissions-logic";
 
 type RoleLike = {
   id: string;

@@ -27,6 +27,7 @@ import {
 import i18n, { key, type DictKey } from "../i18n";
 import { SHARED, SHARED_ACCOUNTS } from "../push/phone";
 import { fromEvery, parseSharedAccounts, type SharedAccount } from "../push/shared";
+import { kindName } from "../products/hub/inbox";
 import { initials, mixHex, previewOf, startsIn, upcoming, widgetPalette, type WidgetPalette, type WireEvent, type WireLast } from "./data";
 import { glyph, type Glyph } from "./icons";
 import { SHARED_SPACE, SHARED_SPACE_SERVER, SHARED_STYLE, SHARED_THEME } from "./keys";
@@ -360,7 +361,7 @@ async function render(widgetName: string): Promise<WidgetRepresentation | null> 
       if (out) return both((p) => <ReplyView p={p} message={t("widgets.signIn")} />);
       const pages = await fromEvery(all, (account) =>
         get<{ entries: { id: string; kind: string; created_at: string; variables?: Record<string, unknown> }[] }>(account, "/me/inbox?unread=true&limit=20").then((page) =>
-          page ? page.entries.map((e) => ({ ...e.variables, id: e.id, kind: e.kind, created_at: e.created_at, server: account.server }) as Note) : null,
+          page ? page.entries.map((e) => ({ ...e.variables, id: e.id, kind: kindName(e.kind), created_at: e.created_at, server: account.server }) as Note) : null,
         ),
       );
       const answered = pages.flatMap((a) => (a.value ? [a.value] : []));

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { ROLE_COLOURS as GROUP_PASTELS } from "../src/logic/shared/permissionsLogic/index.ts";
+import { ROLE_COLOURS as GROUP_PASTELS } from "@ruchoir/permissions-logic";
 import { groupAbilities, groupColour, groupOpens, pickablePeople, personActions, roleToggleRows, rowLine, settledRoles, togglePayload } from "../src/logic/groupEditor.ts";
 
 type May = { edit: boolean; delete: boolean; changeMembers: boolean; changeRoles: boolean; appoint: boolean; addNeedsLicence: boolean; addPeopleNeedsLicence: boolean };

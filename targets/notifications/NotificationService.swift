@@ -2,13 +2,18 @@
 //
 // The relay's push carries nothing but a placeholder ("Ruchoir", "…") and `mutable-content`, so iOS
 // hands it here before showing it. The push does not say which instance sent it, so the extension
-// asks every instance the phone is signed in to what is waiting (ADR 0007), at once, with the
-// addresses and session tokens the app shares in its keychain group (`push/phone.ts`), and shows the
-// newest item of all instead: its title and text, its conversation as the thread, and what the app
-// needs to open it on a tap, its instance included (under `body`, where expo-notifications reads a
-// remote notification's data). When no instance can be reached, or nothing is waiting any more, it
-// says only "New activity". It also asks each instance how many notifications are unread, and puts
-// the total on the app's icon, as the bell counts them.
+// asks the hub of every instance the phone is signed in to for its unread inbox (ADR 0007;
+// `GET /api/v1/me/inbox?unread=true`, decided on 2026-11-10), at once, with the hub access tokens
+// the app shares in its keychain group (`src/push/phone.ts`), and shows the newest entry of all
+// instead: its title and text (the `title` and `body` its product set in `variables`, else the
+// product and the kind), its conversation as the thread, and what the app needs to open it on a
+// tap, its instance included (under `body`, where expo-notifications reads a remote notification's
+// data). The same answer gives each instance's unread count, whose total goes on the app's icon, as
+// the bell counts them. When no hub can be reached (its token expired before the app renewed it, or
+// the network is down), or nothing is unread any more, it says only "New activity".
+//
+// The extension holds short-lived access tokens only, never a refresh token: the app renews them
+// when it comes to the foreground and from its background task (`src/push/refresh.ts`).
 //
 // Whatever it shows, it then tells WidgetKit to read again: something new is waiting, and the home
 // screen's widgets would otherwise keep the old count until their own quarter hour (which iOS
@@ -39,11 +44,11 @@ final class NotificationService: UNNotificationServiceExtension {
       finish()
       return
     }
-    // Every instance at once; the newest item of those that answered is shown once all are in.
+    // Every hub at once; the newest entry of those that answered is shown once all are in.
     let group = DispatchGroup()
     let answers = Answers()
     for account in accounts {
-      guard let url = URL(string: account.server + "/api/v1/push/pending") else { continue }
+      guard let url = URL(string: account.server + "/api/v1/me/inbox?unread=true&limit=5") else { continue }
       var asking = URLRequest(url: url, timeoutInterval: 20)
       asking.setValue("Bearer " + account.token, forHTTPHeaderField: "Authorization")
       asking.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -53,46 +58,29 @@ final class NotificationService: UNNotificationServiceExtension {
         guard
           let http = response as? HTTPURLResponse, http.statusCode == 200,
           let data,
-          let pending = try? JSONDecoder().decode(Pending.self, from: data)
+          let page = try? JSONDecoder().decode(InboxPage.self, from: data)
         else { return }
-        answers.add(account.server, pending)
-      }.resume()
-      // The icon's count: this instance's unread notifications.
-      guard let inbox = URL(string: account.server + "/api/v1/notifications?unread=true&limit=1") else { continue }
-      var counting = URLRequest(url: inbox, timeoutInterval: 20)
-      counting.setValue("Bearer " + account.token, forHTTPHeaderField: "Authorization")
-      counting.setValue("application/json", forHTTPHeaderField: "Accept")
-      group.enter()
-      URLSession.shared.dataTask(with: counting) { data, response, _ in
-        defer { group.leave() }
-        guard
-          let http = response as? HTTPURLResponse, http.statusCode == 200,
-          let data,
-          let feed = try? JSONDecoder().decode(Feed.self, from: data)
-        else { return }
-        answers.count(feed.unread_count)
+        answers.add(account.server, page)
       }.resume()
     }
     group.notify(queue: .global()) { [weak self] in
       defer { self?.finish() }
       guard let self, let content = self.content else { return }
-      if let unread = answers.unread { content.badge = NSNumber(value: unread) }
       let answered = answers.all
-      let items = answered.flatMap { answer in answer.pending.items.map { (server: answer.server, item: $0) } }
-      guard let newest = items.max(by: { $0.item.created_at < $1.item.created_at }) else { return }
-      let item = newest.item
-      content.title = item.title
-      content.body = items.count > 1 ? item.body + "\n" + Fallback.more(items.count - 1) : item.body
-      if answered.allSatisfy({ $0.pending.silent }) { content.sound = nil }
-      if let conversation = item.conversation_id { content.threadIdentifier = conversation }
+      if !answered.isEmpty { content.badge = NSNumber(value: answered.reduce(0) { $0 + $1.page.unread_count }) }
+      let entries = answered.flatMap { answer in answer.page.entries.map { (server: answer.server, entry: $0) } }
+      guard let newest = entries.max(by: { $0.entry.created_at < $1.entry.created_at }) else { return }
+      let entry = newest.entry
+      content.title = entry.text("title") ?? entry.product.capitalized
+      let body = entry.text("body") ?? entry.kind
+      content.body = entries.count > 1 ? body + "\n" + Fallback.more(entries.count - 1) : body
+      if let conversation = entry.text("conversation_id") { content.threadIdentifier = conversation }
       // Its id too, so a read on another device can take it off the screen (the app's `syncRead`).
-      var tap: [String: String] = ["server": newest.server, "notification_id": item.id]
-      if let value = item.space_id { tap["space_id"] = value }
-      if let value = item.conversation_id { tap["conversation_id"] = value }
-      if let value = item.message_id { tap["message_id"] = value }
-      if let value = item.event_id { tap["event_id"] = value }
-      if let value = item.channel_name { tap["channel_name"] = value }
-      if let value = item.actor_name { tap["actor_name"] = value }
+      var tap: [String: String] = ["server": newest.server, "notification_id": entry.id, "link": entry.link]
+      if let value = entry.organisation { tap["space_id"] = value }
+      for key in ["conversation_id", "message_id", "event_id", "channel_name", "actor_name"] {
+        if let value = entry.text(key) { tap[key] = value }
+      }
       content.userInfo = ["body": tap]
     }
   }
@@ -110,63 +98,60 @@ final class NotificationService: UNNotificationServiceExtension {
   }
 }
 
-/// `GET /api/v1/push/pending`, the fields used here.
-private struct Pending: Decodable {
-  let silent: Bool
-  let items: [Item]
+/// `GET /api/v1/me/inbox` of the hub (`Page`), the fields used here.
+private struct InboxPage: Decodable {
+  let entries: [Entry]
+  let unread_count: Int
 
-  struct Item: Decodable {
+  /// An inbox entry (`Entry`): the product, its kind, and the `variables` its sentence is drawn from.
+  struct Entry: Decodable {
     let id: String
-    let title: String
-    let body: String
-    let space_id: String?
-    let conversation_id: String?
-    let message_id: String?
-    let event_id: String?
-    let channel_name: String?
-    let actor_name: String?
+    let product: String
+    let kind: String
+    let link: String
+    let organisation: String?
     let created_at: String
+    let variables: [String: Value]?
+
+    /// A string of `variables`, when the product set one.
+    func text(_ key: String) -> String? {
+      if case .text(let value) = variables?[key], !value.isEmpty { return value }
+      return nil
+    }
+  }
+
+  /// A value of `variables`: only strings are read.
+  enum Value: Decodable {
+    case text(String)
+    case other
+
+    init(from decoder: Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      if let value = try? container.decode(String.self) { self = .text(value) } else { self = .other }
+    }
   }
 }
 
-/// `GET /api/v1/notifications?unread=true&limit=1`, the field used here.
-private struct Feed: Decodable {
-  let unread_count: Int
-}
-
-/// What the instances answered, gathered from URLSession's queue behind a lock.
+/// What the hubs answered, gathered from URLSession's queue behind a lock.
 private final class Answers: @unchecked Sendable {
   private let lock = NSLock()
-  private var list: [(server: String, pending: Pending)] = []
-  private var counted: Int?
+  private var list: [(server: String, page: InboxPage)] = []
 
-  func count(_ unread: Int) {
+  func add(_ server: String, _ page: InboxPage) {
     lock.lock()
-    counted = (counted ?? 0) + unread
+    list.append((server, page))
     lock.unlock()
   }
 
-  /// The unread total of the instances that answered; nil when none did (the icon keeps its count).
-  var unread: Int? {
-    lock.lock()
-    defer { lock.unlock() }
-    return counted
-  }
-
-  func add(_ server: String, _ pending: Pending) {
-    lock.lock()
-    list.append((server, pending))
-    lock.unlock()
-  }
-
-  var all: [(server: String, pending: Pending)] {
+  var all: [(server: String, page: InboxPage)] {
     lock.lock()
     defer { lock.unlock() }
     return list
   }
 }
 
-/// A signed-in instance as the app hands it over.
+/// A signed-in instance as the app hands it over (`src/push/shared.ts`): its hub and a short-lived
+/// access token for it. The calendar and the chat it may also carry are the widgets'.
 private struct SharedAccount: Decodable {
   let server: String
   let token: String

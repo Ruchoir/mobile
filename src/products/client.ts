@@ -205,5 +205,13 @@ export function createInstanceClient(instance: Instance, hooks: ClientHooks): Ru
     options: () => withOptions({ baseUrl: hubUrl }),
   };
 
-  return { ...stubs, ...chat, ...drive, ...calendar, ...hub, ...inbox, listRoles: none, listGroups: none, ...extras };
+  // The hub's socket only receives: typing goes to the chat.
+  const connectRealtime: HubApi["connectRealtime"] = (handlers) => ({
+    ...hub.connectRealtime(handlers),
+    sendTyping: (conversationId) => {
+      if (transports.has("chat")) chat.sendTyping(conversationId);
+    },
+  });
+
+  return { ...stubs, ...chat, ...drive, ...calendar, ...hub, ...inbox, connectRealtime, listRoles: none, listGroups: none, ...extras };
 }

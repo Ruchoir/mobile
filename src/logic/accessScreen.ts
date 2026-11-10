@@ -3,7 +3,7 @@
  * and "Pourquoi ?", read on the phone): the order of the lines with an override in place, what each
  * line says about itself, the rows of a level sheet, the customise draft and its payload, whether the
  * customise row is open, locked (community edition) or absent, and the cards that explain an access.
- * The shared logic (`@ruchoir/client/permissionsLogic`) holds the rules; the API is the judge of every
+ * The shared logic (`@ruchoir/permissions-logic`) holds the rules; the API is the judge of every
  * write. Dictionary keys are plain strings and `say` is the translator, so the tests need no dictionary.
  * Pure, tested by Node.
  */
@@ -54,7 +54,7 @@ import {
   type StepGroup,
   type StepLike,
   type WhyRoleLike,
-} from "./shared/permissionsLogic/index.ts";
+} from "@ruchoir/permissions-logic";
 
 type Say = (key: string, vars?: Record<string, string | number>) => string;
 

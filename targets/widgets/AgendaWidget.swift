@@ -96,8 +96,8 @@ struct AgendaProvider: TimelineProvider {
     let from = Calendar.current.startOfDay(for: now)
     let path = "/calendar/occurrences?from=\(Instant.api(from))&to=\(Instant.api(from.addingTimeInterval(8 * 86_400)))"
     // Every instance's events and calendars (ADR 0007), each event marked with its instance.
-    async let occurrences = Instance.everywhere(path, as: [AgendaEvent].self)
-    async let calendars = Instance.everywhere("/calendars", as: [CalendarInfo].self)
+    async let occurrences = Instance.everywhere(path, as: [AgendaEvent].self, product: .calendar)
+    async let calendars = Instance.everywhere("/calendars", as: [CalendarInfo].self, product: .calendar)
     guard let answered = await occurrences else {
       // Out of reach for now: the last week read, rather than an empty card, until the next try.
       return LastAgenda.read() ?? AgendaEntry(date: now, events: [], colors: [:], failed: true)

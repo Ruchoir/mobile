@@ -101,7 +101,7 @@ export type CalendarEvent = Occurrence & {
 
 /** The channel an event is linked to, as the viewer may know it: a private channel they are not in
  *  has no name. */
-export type EventChannel = { id: string; name?: string; spaceId: string; private: boolean; accessible: boolean };
+export type EventChannel = { id: string; name?: string; spaceId?: string; private: boolean; accessible: boolean };
 
 /** A channel an event may be linked to. */
 export type LinkableChannel = { id: string; name: string; spaceId: string; spaceName: string; private: boolean };
@@ -188,7 +188,9 @@ export type CreatedFeed = { id: string; calendarId?: string; url: string; create
 
 export type CalendarDto = {
   id: string;
-  space_id?: string | null;
+  organisation_id?: string | null;
+  /** Whose calendar it is, for one shared with the viewer (the calendar gives no name). */
+  owner_id?: string | null;
   name: string;
   description?: string | null;
   color: CalendarColor;
@@ -198,8 +200,8 @@ export type CalendarDto = {
   can_write_events: boolean;
   can_manage: boolean;
   hidden: boolean;
-  my_reminders?: number[];
-  share_level?: ShareLevel;
+  my_reminders?: number[] | null;
+  share_level?: ShareLevel | null;
   owner_name?: string;
 };
 
@@ -224,17 +226,21 @@ export type OccurrenceDto = {
   busy?: boolean;
 };
 
-export type AttendeeDto = { id: string; user_id?: string | null; email?: string | null; name: string; status: AttendeeStatus };
+/** Someone invited by account: the calendar gives no name, the screens find it among the members. */
+export type AttendeeDto = { id: string; user_id: string; status: AttendeeStatus };
+
+/** Someone invited by address. */
+export type GuestDto = { id: string; email: string; name?: string | null; status: AttendeeStatus };
 
 export type EventDto = OccurrenceDto & {
   rrule?: string | null;
   created_by?: string | null;
   updated_at: string;
-  organizer?: { user_id: string; name: string } | null;
   attendees?: AttendeeDto[];
-  channel?: { id: string; name?: string | null; space_id: string; private: boolean; accessible: boolean } | null;
-  files?: EventFile[];
-  my_own_reminders?: number[];
+  guests?: GuestDto[];
+  /** The chat channel it is linked to, as the viewer may know it (no organisation is given). */
+  channel?: { id: string; name?: string | null; private: boolean; accessible: boolean } | null;
+  my_own_reminders?: number[] | null;
 };
 
 export type EventCardDto = {
@@ -252,7 +258,7 @@ export type EventCardDto = {
   recurrence_id?: string | null;
 };
 
-export type FeedDto = { id: string; calendar_id?: string | null; created_at: string; last_used_at?: string | null; url?: string };
+export type FeedDto = { id: string; calendar_id?: string | null; created_at: string; last_used_at?: string | null };
 
 export function opt<T>(value: T | null | undefined): T | undefined {
   return value === null ? undefined : value;
@@ -261,7 +267,7 @@ export function opt<T>(value: T | null | undefined): T | undefined {
 export function toCalendar(dto: CalendarDto): Calendar {
   return {
     id: dto.id,
-    spaceId: opt(dto.space_id),
+    spaceId: opt(dto.organisation_id),
     name: dto.name,
     description: opt(dto.description),
     color: dto.color,
@@ -271,7 +277,7 @@ export function toCalendar(dto: CalendarDto): Calendar {
     canWriteEvents: dto.can_write_events,
     canManage: dto.can_manage,
     hidden: dto.hidden,
-    ...(dto.my_reminders !== undefined ? { myReminders: dto.my_reminders } : {}),
+    ...(dto.my_reminders !== undefined && dto.my_reminders !== null ? { myReminders: dto.my_reminders } : {}),
     ...(dto.share_level ? { shareLevel: dto.share_level, ownerName: dto.owner_name ?? "" } : {}),
   };
 }
@@ -305,25 +311,23 @@ export function toEvent(dto: EventDto): CalendarEvent {
     rrule: opt(dto.rrule),
     createdBy: opt(dto.created_by),
     updatedAt: dto.updated_at,
-    organizer: dto.organizer ? { userId: dto.organizer.user_id, name: dto.organizer.name } : undefined,
-    attendees: (dto.attendees ?? []).map((a) => ({
-      id: a.id,
-      userId: opt(a.user_id),
-      email: opt(a.email),
-      name: a.name,
-      status: a.status,
-    })),
+    // The author organises it; the calendar gives their account, not their name.
+    organizer: dto.created_by ? { userId: dto.created_by, name: "" } : undefined,
+    attendees: [
+      ...(dto.attendees ?? []).map((a) => ({ id: a.id, userId: a.user_id, name: "", status: a.status })),
+      ...(dto.guests ?? []).map((g) => ({ id: g.id, email: g.email, name: g.name ?? g.email, status: g.status })),
+    ],
     channel: dto.channel
       ? {
           id: dto.channel.id,
           name: opt(dto.channel.name),
-          spaceId: dto.channel.space_id,
           private: dto.channel.private,
           accessible: dto.channel.accessible,
         }
       : undefined,
-    files: dto.files ?? [],
-    ...(dto.my_own_reminders !== undefined ? { myOwnReminders: dto.my_own_reminders } : {}),
+    // An event's files are their own route (`GET /events/{id}/files`), which the app does not read yet.
+    files: [],
+    ...(dto.my_own_reminders !== undefined && dto.my_own_reminders !== null ? { myOwnReminders: dto.my_own_reminders } : {}),
   };
 }
 
@@ -361,11 +365,14 @@ export function eventBody(input: EventInput) {
     rrule: input.rrule ?? null,
     ...(input.reminders !== undefined ? { reminders: input.reminders } : {}),
     calendar_id: input.calendarId,
+    // Accounts go in `attendees`, addresses in `guests`.
     ...(input.attendees
-      ? { attendees: input.attendees.map((a) => ("userId" in a ? { user_id: a.userId } : { email: a.email, name: a.name })) }
+      ? {
+          attendees: input.attendees.flatMap((a) => ("userId" in a ? [{ user_id: a.userId }] : [])),
+          guests: input.attendees.flatMap((a) => ("userId" in a ? [] : [{ email: a.email, name: a.name }])),
+        }
       : {}),
     ...(input.channelId !== undefined ? { channel_id: input.channelId } : {}),
-    ...(input.files ? { files: input.files } : {}),
   };
 }
 
@@ -402,10 +409,10 @@ export type PublicInvitationDto = {
   all_day: boolean;
   tzid?: string | null;
   recurring: boolean;
-  organizer?: string | null;
+  /** The organisation whose calendar it is in. */
+  organisation?: string | null;
   name?: string | null;
   status: AttendeeStatus;
-  files?: EventFile[];
 };
 
 export function toPublicInvitation(dto: PublicInvitationDto): PublicInvitation {
@@ -418,10 +425,11 @@ export function toPublicInvitation(dto: PublicInvitationDto): PublicInvitation {
     allDay: dto.all_day,
     tzid: opt(dto.tzid),
     recurring: dto.recurring,
-    organizer: opt(dto.organizer),
+    // The calendar names the organisation, not the organiser.
+    organizer: undefined,
     name: opt(dto.name),
     status: dto.status,
-    files: dto.files ?? [],
+    files: [],
   };
 }
 

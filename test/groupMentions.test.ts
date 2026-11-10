@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { parseInline } from "../src/logic/inline.ts";
 import { activeToken, insertToken } from "../src/logic/mentions.ts";
-import { matchGroupMention } from "../src/logic/shared/permissionsLogic/index.ts";
+import { matchGroupMention } from "@ruchoir/permissions-logic";
 import { groupByName, mentionOrder, mentionableGroups } from "../src/logic/groupMentions.ts";
 
 const group = (id: string, name: string, memberIds: string[] = []) => ({
