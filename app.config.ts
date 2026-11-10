@@ -4,7 +4,7 @@ type Env = Record<string, string | undefined>;
 
 /**
  * The build number Apple and Google see (`CFBundleVersion`, `versionCode`): the build workflow's run
- * number (`.github/workflows/mobile-build.yml`), so each upload is above the last. Absent outside a
+ * number (`.github/workflows/release.yml`), so each upload is above the last. Absent outside a
  * build, where nothing is uploaded.
  */
 function buildNumber(env: Env): number | undefined {
