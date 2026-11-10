@@ -5,6 +5,13 @@ import { fromEvery, parseSharedAccounts, serializeSharedAccounts } from "../src/
 
 const A = { server: "https://a.test", token: "ta" };
 const B = { server: "https://b.test", token: "tb" };
+const C = { server: "https://hub.c.test", token: "th", calendar: { url: "https://calendar.c.test", token: "tc" } };
+
+test("the_products_the_manifest_lists_travel_with_their_tokens", () => {
+  assert.deepEqual(parseSharedAccounts(serializeSharedAccounts([C])), [C]);
+  const odd = JSON.stringify([{ ...C, chat: { url: "http://chat.c.test", token: "x" } }]);
+  assert.deepEqual(parseSharedAccounts(odd), [C]);
+});
 
 test("the_list_reads_back_as_written", () => {
   assert.deepEqual(parseSharedAccounts(serializeSharedAccounts([A, B])), [A, B]);

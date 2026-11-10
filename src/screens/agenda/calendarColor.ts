@@ -1,4 +1,4 @@
-import type { CalendarColor } from "../../api/client/index.ts";
+import type { CalendarColor } from "../../products/index.ts";
 
 import type { Palette } from "../../theme/tokens";
 

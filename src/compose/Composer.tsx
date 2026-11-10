@@ -5,7 +5,7 @@
  * A message goes through the outbox, which draws it at once and keeps it if it fails; the text of an
  * unsent message is the conversation's draft, kept while the app runs.
  */
-import type { Channel, Group, Member } from "../api/client/index.ts";
+import type { Channel, Group, Member } from "../products/index.ts";
 import { Check, PenLine, Plus, Send } from "lucide-react-native";
 import { useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";

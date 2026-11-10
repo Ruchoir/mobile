@@ -4,8 +4,8 @@
  * and account, read on first use from an instance that has the feature; each new reaction goes to
  * the front at once.
  */
-import { supports, type RuchoirClient } from "../api/client/index.ts";
-import { quickReactions } from "../api/client/emoji/index.ts";
+import { supports, type RuchoirClient } from "../products/index.ts";
+import { quickReactions } from "../logic/shared/emoji/index.ts";
 import { useCallback, useSyncExternalStore } from "react";
 
 import { useApi } from "../api/useApi";

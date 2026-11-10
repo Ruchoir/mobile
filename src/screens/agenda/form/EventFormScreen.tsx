@@ -5,10 +5,10 @@
  * key of its own, so the sheets it opens (calendar, pickers...) read and change it; closing with
  * something typed asks first, and a failure keeps everything typed.
  */
-import { isApiError, type Calendar, type EditScope, type SpaceFile } from "../../../api/client/index.ts";
+import { isApiError, type Calendar, type EditScope, type SpaceFile } from "../../../products/index.ts";
 import { StackActions, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { remindersLabel } from "../../../api/client/calendarLogic/index.ts";
+import { remindersLabel } from "../../../logic/shared/calendarLogic/index.ts";
 import { Bell, ChevronDown, ChevronRight, FileText, Globe, MapPin, MessageSquare, Paperclip, Repeat, UserPlus, Users } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";

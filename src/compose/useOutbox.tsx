@@ -6,7 +6,7 @@
  * live event once the server has it; a failure stays on screen, marked, until it is retried or
  * dropped. The rules are in `logic/outbox.ts`.
  */
-import type { InlineImage, MessageAttachment } from "../api/client/index.ts";
+import type { InlineImage, MessageAttachment } from "../products/index.ts";
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 
 import { useApi } from "../api/useApi";

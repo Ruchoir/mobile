@@ -1,4 +1,4 @@
-import type { CalendarEvent, Occurrence, RuchoirClient } from "../../api/client/index.ts";
+import type { CalendarEvent, Occurrence, RuchoirClient } from "../../products/index.ts";
 
 import { occurrenceOf } from "../../logic/eventForm";
 

@@ -2,7 +2,7 @@
  * What a notice says, by its event: a message row draws it in the history, a conversation row as the
  * channel's latest news. The server stores the event, never the words.
  */
-import type { SystemEvent } from "../../api/client/index.ts";
+import type { SystemEvent } from "../../products/index.ts";
 
 import { key } from "../../i18n";
 

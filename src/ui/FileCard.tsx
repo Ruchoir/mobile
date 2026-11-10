@@ -1,4 +1,4 @@
-import { fileExtension } from "../api/client/index.ts";
+import { fileExtension } from "../products/index.ts";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 

@@ -4,7 +4,7 @@
  * instance's limit is refused before it goes, with its name; an event of a personal calendar
  * without a channel has no space for it, and says to choose a channel first.
  */
-import { isApiError, type Calendar } from "../../../api/client/index.ts";
+import { isApiError, type Calendar } from "../../../products/index.ts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 

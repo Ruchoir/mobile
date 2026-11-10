@@ -1,4 +1,4 @@
-import type { Calendar } from "../../api/client/index.ts";
+import type { Calendar } from "../../products/index.ts";
 
 /**
  * How a calendar is named on a line, as the web's picker names it: its name, and under it whose it

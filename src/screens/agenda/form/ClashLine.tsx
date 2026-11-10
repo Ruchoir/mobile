@@ -1,5 +1,5 @@
-import type { Calendar, Occurrence } from "../../../api/client/index.ts";
-import { clashes } from "../../../api/client/calendarLogic/index.ts";
+import type { Calendar, Occurrence } from "../../../products/index.ts";
+import { clashes } from "../../../logic/shared/calendarLogic/index.ts";
 import { AlertTriangle } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";

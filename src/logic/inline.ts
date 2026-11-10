@@ -8,7 +8,7 @@
  * stray " Roux". Group names are read by the shared matcher (`@ruchoir/client`), which folds their
  * words once per list: hand it the same array while the groups do not change.
  */
-import { matchGroupMention, type PreparedGroupNames } from "../api/client/permissionsLogic/index.ts";
+import { matchGroupMention, type PreparedGroupNames } from "./shared/permissionsLogic/index.ts";
 
 export type Segment = { kind: "text" | "mention" | "group" | "bold" | "italic" | "code" | "link"; text: string };
 

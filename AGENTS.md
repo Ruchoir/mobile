@@ -109,8 +109,10 @@ what is specific to this repository, and never contradicts this block.
 The mobile app for iOS and Android: one Expo app for every product, built on the packages of `core`
 and the Propolis SDK.
 
-**Status:** the app moved from `Ruchoir/ruchoir` (`apps/mobile`) with its history. It still
-speaks the monolith's API through a copy of its client in `src/api/client`.
+**Status:** the app moved from `Ruchoir/ruchoir` (`apps/mobile`) with its history, and reaches an
+instance through its products: sign-in with Propolis (`@ruchoir/native-client`), then each product's
+API with its own access token (`src/products`). What no product serves yet is hidden; the list is in
+the restructuring plan's progress section.
 
 ### Boundaries
 
@@ -155,14 +157,19 @@ Licence: `AGPL-3.0-only` (`LICENSE`).
   package scripts set it); a new script must too.
 - **No deployment hostname in the repository.** The development server comes from
   `.env.local` (`EXPO_PUBLIC_DEFAULT_SERVER`, untracked).
-- The API is reached only through the client copied from the monolith in `src/api/client` until the app moves to the products' own APIs. The app holds several
-  instances at once (ADR 0007), one client each: **a screen calls the API through `useApi()`**, the
-  client of the instance it belongs to (`src/api/useApi.ts`), never through the module-level calls,
-  which belong to the web's default client. A module outside a component takes the client as an
-  argument. A session is a bearer token kept in the Keychain, one per instance, never anywhere else.
-- **The token only travels to its instance.** An image or a download that the app fetches itself
-  takes its headers from `authHeadersFor(api, url)`, which gives nothing for another host
-  (`src/api/sameInstance.ts`); never pass `api.authInit()` headers to a URL that came from data.
+- **An instance is reached through its products.** Signing in is `@ruchoir/native-client` with
+  Propolis (RFC 8252: the authentication browser, PKCE, redirect `com.ruchoir.app:/oauth/callback`,
+  one refresh token per issuer in the Keychain), from the domain the person types (the hub's
+  manifest). Each product (`src/products/{hub,chat,drive,calendar}/api.ts`) is called on its own
+  origin with an access token issued for it (`resource`), fetched before each request
+  (`products/client.ts`). A screen calls through `useApi()`, the client of its instance; a call no
+  installed product serves rejects with `ProductUnavailable` (`products/unavailable.ts`), and the
+  screen that needs it is hidden. A product's tab and widgets show only when the manifest lists it
+  (`installed`). The account and the organisation (members, roles, groups, invitations, licence) are
+  Propolis's pages, opened with `openPropolisPage` (`products/auth.ts`).
+- **A token only travels to its product.** An image or a download that the app fetches itself
+  takes its headers from `authHeadersFor(api, url)`, which gives the token of the product the URL is
+  on and nothing for any other host; never pass a product's headers to a URL that came from data.
 - Every string a person reads goes through i18n, French first, the five other languages complete
   (`pnpm --filter @ruchoir/mobile i18n:check`).
 - Colours come from `src/theme/tokens.ts`, a copy of `tokens.css` from `@ruchoir/design-system` kept honest by
@@ -181,7 +188,7 @@ Licence: `AGPL-3.0-only` (`LICENSE`).
 - **Gate by permissions, never by role strings.** A control is shown on `rightsOf(space)` /
   `useRights().gates` (space level) and `useChannelGates(channel)` / `channelGates` (a channel's
   `myPermissions`: send, react, attach, pin, moderate, manage, members, delete), the same functions as
-  the web (`src/api/client/permissionsLogic`). The role string is only the fallback of an instance without
+  the web (`src/logic/shared/permissionsLogic`). The role string is only the fallback of an instance without
   the permissions, inside the places `test/noRoleGates.test.ts` lists, counted per file (a new
   `role === "admin"`, `"guest"` comparison, `includes(role)`, `switch (role)` or `canAdminister(` fails it). The
   fallbacks of an older instance live in `logic/spaceRoles.ts` (`legacyDoors`, `PHONE_LEGACY_CHANNEL`): a screen
@@ -229,14 +236,17 @@ show. What every screen keeps:
 ```
 src/App.tsx            fonts and preferences, the accounts, then the sign-in flow or one scope per
                        signed-in instance, the active one drawing the space gate
-src/accounts/          the instances (ADR 0007): registry and Keychain store (migration of the single-
-                       instance version), one client per instance (clients.ts), AccountsProvider
+src/accounts/          the instances (ADR 0007): registry (domain and discovery) and Keychain store,
+                       one client per instance (clients.ts), AccountsProvider
                        (statuses, active instance, summaries, adding, signing out), InstanceScope (an
                        instance's client, socket, outbox, uploads, spaces), the merged inbox, the
                        router that opens a tapped notification or link on its instance
 src/session/           instance choice (server.ts), the session reducer (machine.ts), the sign-in flow
-                       over a candidate client (SignInFlow), sign-up and its pending confirmation
-                       (memory only)
+                       (SignInFlow: discovery, then Propolis in the authentication browser)
+src/products/          the native client and Propolis's pages (auth.ts), each product's API
+                       (hub, chat, drive, calendar), the client gathering them (client.ts), the
+                       calls no product serves (unavailable.ts), the shapes (shared/)
+src/logic/shared/      the logic shared with the web pages: calendar, emoji, files, permissions
 src/prefs/             the preferences kept on the phone (prefs.ts, tested) and their store (store.ts):
                        accent, day or night, text size, language, agenda view, week start, event length;
                        AccountPrefsSync.tsx keeps the account's in line with every instance
@@ -329,7 +339,7 @@ src/i18n/              i18next and the six dictionaries
   as the system's dialog on Android (`DateTimePickerAndroid.open`). A picker works on the phone's
   clock: `form/when.ts` hands it a day at noon and a time on a fixed day, and reads the same local
   fields back, so no time zone shifts them. The draft keeps the event's own zone (`tz`).
-- **The calendar's logic is the web's** (`src/api/client/calendarLogic`: time in a zone, rules and
+- **The calendar's logic is the web's** (`src/logic/shared/calendarLogic`: time in a zone, rules and
   their phrases, reminders and their words). Its keys are looked up in this app's dictionaries too:
   `useSharedT()` hands it `t`, and the audit scans it with the app.
 
@@ -362,21 +372,13 @@ CI=1 pnpm bundle:ios   # proves Metro resolves and bundles the app
 
 The dictionaries check (`i18n:check`) waits for the move to `@ruchoir/i18n`.
 - **Before sign-in the app is its own stack** (`navigation/AuthNavigator.tsx`, its own
-  `NavigationContainer`): welcome, tutorial, sign-in, sign-up, invitation link, "check your e-mails",
-  forgotten password. `App.tsx` renders it for `needsServer` and `signedOut` at the same place, so
-  choosing a server (which moves the session state) keeps the stack where it is. A `signedOut` with a
-  `reason` (an expired session, or back from the second factor) opens on sign-in, anything else on the
-  welcome. The second factor stays the `mfa` state's own screen.
-- **The password typed at sign-up lives in memory only** (`SessionProvider`'s pending sign-up), so the
-  app can sign in by itself when it comes back to the foreground after the link was followed, or once
-  the e-mailed code is accepted. It is dropped on sign-in or on leaving "check your e-mails"; a closed
-  app forgets it, and the person signs in by hand.
-- **An invitation link names its server.** `logic/invitationLink.ts` reads it; before sign-in the app
-  moves to that server (`chooseServer`), once signed in it refuses another server's link. One pasted at
-  sign-up is accepted by `SpaceGate` right after the first sign-in.
-- **A 401 is not always a dead session.** The client hands `onUnauthorized` the API's error code:
-  `invalid_credentials` is a wrong password typed to confirm an action (changing the password, turning
-  off two-factor) and must not sign the phone out.
+  `NavigationContainer`): welcome, tutorial, sign-in. The sign-in only takes the instance's domain;
+  everything else (password, second factor, passkeys, sign-up, forgotten password) is Propolis's,
+  in the authentication browser. A `signedOut` with a `reason` opens on sign-in, anything else on the
+  welcome.
+- **A grant that ends signs the instance out.** The native client says so when a refresh token is
+  refused (`signed_out`, `session_ended`); the product transport then answers 401 and the accounts
+  mark the instance signed out (`expired`).
 - **Preferences are read before the first screen** (`prefs/store.ts`, `loadPrefs` in `App.tsx`):
   `useTheme` takes the style, accent and mode from them, `Text` and `TextField` scale with the text size, and a
   forced day or night is also handed to the system (`Appearance.setColorScheme`) so its own controls

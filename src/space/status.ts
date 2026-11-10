@@ -1,4 +1,4 @@
-import type { Workspace } from "../api/client/index.ts";
+import type { Workspace } from "../products/index.ts";
 
 /**
  * Where the person stands with spaces: still loading, in none at all (a new account, or one removed

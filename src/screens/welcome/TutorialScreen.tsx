@@ -29,7 +29,7 @@ export function TutorialScreen() {
   const [page, setPage] = useState(0);
   const last = page === TUTORIAL.length - 1;
 
-  const finish = () => (replay ? navigation.goBack() : navigation.navigate("signUp"));
+  const finish = () => (replay ? navigation.goBack() : navigation.navigate("signIn"));
   const turn = (to: number) => {
     list.current?.scrollToIndex({ index: to, animated: true });
     setPage(to);

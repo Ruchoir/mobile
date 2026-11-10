@@ -1,4 +1,4 @@
-import type { Occurrence } from "../../api/client/index.ts";
+import type { Occurrence } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, View } from "react-native";
 

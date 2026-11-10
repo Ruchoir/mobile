@@ -2,7 +2,7 @@
  * Every emoji, to react with one: a search in the reader's language (French and English as a
  * fallback), and the categories as tabs. The same dataset and keywords as the web.
  */
-import { EMOJI_CATEGORIES, searchEmojis } from "../../api/client/emoji/index.ts";
+import { EMOJI_CATEGORIES, searchEmojis } from "../../logic/shared/emoji/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { SearchX } from "lucide-react-native";
 import { useMemo, useState } from "react";

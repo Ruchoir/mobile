@@ -1,4 +1,4 @@
-import type { SearchMessage } from "../../api/client/index.ts";
+import type { SearchMessage } from "../../products/index.ts";
 import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import { SearchX } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";

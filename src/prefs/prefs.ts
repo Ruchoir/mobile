@@ -10,7 +10,7 @@
  *
  * Kept free of React Native so Node tests it.
  */
-import type { AccountPrefsDoc } from "../api/client/index.ts";
+import type { AccountPrefsDoc } from "../products/index.ts";
 
 import type { AgendaView } from "../logic/agenda.ts";
 import { STYLES, type Accent, type Style } from "../theme/tokens.ts";

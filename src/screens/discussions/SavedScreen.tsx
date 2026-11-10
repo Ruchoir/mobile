@@ -3,7 +3,7 @@
  * the web's saved view. A tap takes me to the message in its conversation (moving to its space when
  * it is another one); the bookmark is taken off from the message's own menu, or here with a long press.
  */
-import type { SavedMessage } from "../../api/client/index.ts";
+import type { SavedMessage } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Bookmark } from "lucide-react-native";

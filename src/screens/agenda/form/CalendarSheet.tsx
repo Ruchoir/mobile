@@ -1,4 +1,4 @@
-import type { Calendar } from "../../../api/client/index.ts";
+import type { Calendar } from "../../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { CalendarDays, Check } from "lucide-react-native";
 import { Fragment } from "react";

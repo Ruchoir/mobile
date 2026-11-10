@@ -12,9 +12,8 @@ import { useLinkRouter } from "./accounts/useLinkRouter";
 import { AppLock } from "./lock/AppLock";
 import { isTablet } from "./layout/wide";
 import { AuthNavigator } from "./navigation/AuthNavigator";
-import { MfaScreen } from "./screens/auth/MfaScreen";
 import { BootScreen } from "./screens/boot/BootScreen";
-import { SignInFlow, useSession, type FlowStart } from "./session/SessionProvider";
+import { SignInFlow, type FlowStart } from "./session/SessionProvider";
 import { SpaceGate } from "./space/SpaceGate";
 import { ToastProvider } from "./ui/Toast";
 import { AccountPrefsSender } from "./prefs/AccountPrefsSync";
@@ -78,7 +77,7 @@ function Root() {
         onSignedIn={accounts.completeSignIn}
         onCancel={signedIn.length > 0 ? accounts.cancelFlow : undefined}
       >
-        <FlowScreens />
+        <AuthNavigator />
       </SignInFlow>
     );
   }
@@ -95,10 +94,4 @@ function Root() {
       </AppLock>
     </ToastProvider>
   );
-}
-
-/** The screens before sign-in: the second factor, or the welcome, sign-in and sign-up. */
-function FlowScreens() {
-  const session = useSession();
-  return session.state.kind === "mfa" ? <MfaScreen /> : <AuthNavigator />;
 }

@@ -3,7 +3,7 @@
  * per client and kept while it lives. Unknown (no answer yet, or an older instance) reads as "no":
  * whatever needs it is simply not offered (docs/api-compatibility.md).
  */
-import type { RuchoirClient } from "./client";
+import type { RuchoirClient } from "../products/index.ts";
 import { useEffect, useState } from "react";
 
 import { featureState } from "../logic/featureState";

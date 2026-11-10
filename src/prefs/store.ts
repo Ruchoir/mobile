@@ -11,7 +11,7 @@
  * and when the connection comes back, the account is read again: the first time this phone syncs
  * with an account the two are merged, afterwards the server's win (`reconcileAccountPrefs`).
  */
-import { mergePending, reconcileAccountPrefs, type AccountPrefsDoc, type RuchoirClient } from "../api/client/index.ts";
+import { mergePending, reconcileAccountPrefs, type AccountPrefsDoc, type RuchoirClient } from "../products/index.ts";
 import * as SecureStore from "expo-secure-store";
 import { useSyncExternalStore } from "react";
 import { Appearance } from "react-native";

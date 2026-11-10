@@ -3,7 +3,7 @@
  * is archived (read-only, nothing deleted), as the web's channel settings. The API decides who may
  * change what; a refusal is said, and the details reload from the live `channels` event.
  */
-import { isApiError, type ChannelType } from "../../api/client/index.ts";
+import { isApiError, type ChannelType } from "../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";

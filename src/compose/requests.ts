@@ -3,7 +3,7 @@
  * cannot reach the conversation's composer: it asks here, and the conversation, still mounted under
  * the sheet, answers.
  */
-import type { SpaceFile } from "../api/client/index.ts";
+import type { SpaceFile } from "../products/index.ts";
 import { useEffect, useRef } from "react";
 
 import type { LocalFile } from "./useAttachments";

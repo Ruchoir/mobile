@@ -1,10 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Bookmark, CircleCheck, LifeBuoy, LogOut, Plus, Server, Settings, Shield, ShieldCheck, Smile } from "lucide-react-native";
+import { Bookmark, CircleCheck, LifeBuoy, LogOut, Plus, Server, Settings, Shield, Smile } from "lucide-react-native";
 import { Alert, StyleSheet, View } from "react-native";
 
 import { useAccounts, type Account } from "../../accounts/AccountsProvider";
 import { hostOf } from "../../accounts/summary";
+import { useApi } from "../../api/useApi";
+import { openPropolisPage } from "../../products/auth.ts";
 import { useTranslation } from "../../i18n";
 import type { RootParams } from "../../navigation/types";
 import { useSession } from "../../session/SessionProvider";
@@ -29,10 +31,13 @@ export function AccountSheet() {
   const session = useSession();
   const accounts = useAccounts();
   const navigation = useNavigation<NativeStackNavigationProp<RootParams>>();
+  const { instance, installed } = useApi();
   if (session.state.kind !== "signedIn") return null;
   const { user, server } = session.state;
   const presence = selfPresence(user.presenceChoice);
-  const open = (route: "statusSheet" | "profile" | "saved" | "instanceAdmin" | "preferences" | "security" | "help") => {
+  // The profile and the security of the account are Propolis's: its page opens in the authentication browser.
+  const openAccount = () => void openPropolisPage(instance.issuer, "/account");
+  const open = (route: "statusSheet" | "saved" | "preferences" | "help") => {
     navigation.goBack();
     navigation.navigate(route);
   };
@@ -55,8 +60,10 @@ export function AccountSheet() {
         subtitle={t("account.status")}
         onPress={() => open("statusSheet")}
       />
-      <ActionRow icon={Smile} tint={c.sky} title={t("account.profile")} onPress={() => open("profile")} />
-      <ActionRow icon={Bookmark} tint={c.mint} title={t("saved.title")} subtitle={t("saved.hint")} onPress={() => open("saved")} />
+      <ActionRow icon={Smile} tint={c.sky} title={t("account.profile")} onPress={openAccount} />
+      {installed("chat") ? (
+        <ActionRow icon={Bookmark} tint={c.mint} title={t("saved.title")} subtitle={t("saved.hint")} onPress={() => open("saved")} />
+      ) : null}
       <ActionRow
         icon={Settings}
         tint={c.violet}
@@ -69,11 +76,8 @@ export function AccountSheet() {
         tint={c.peach}
         title={t("account.security")}
         subtitle={t("account.securityHint")}
-        onPress={() => open("security")}
+        onPress={openAccount}
       />
-      {user.isInstanceAdmin ? (
-        <ActionRow icon={ShieldCheck} tint={c.pink} title={t("admin.screenTitle")} subtitle={t("admin.hint")} onPress={() => open("instanceAdmin")} />
-      ) : null}
       <ActionRow icon={LifeBuoy} tint={c.sun} title={t("account.help")} onPress={() => open("help")} />
       <Text variant="smallStrong" tone="muted" style={styles.section}>
         {t("account.instances")}

@@ -3,7 +3,7 @@
  *
  * The phone registers its device token with each of its instances; an instance asks the publisher's
  * relay to wake it, with a constant push and never any content, which does not even say which
- * instance woke it; the phone then asks each instance what to show (`GET /api/v1/push/pending`):
+ * instance woke it; the phone then asks each instance what to show (the hub's `GET /api/v1/me/push/pending`):
  *
  * - on iOS, the Notification Service Extension (`targets/notifications`) does, before the alert is
  *   shown;
@@ -17,13 +17,16 @@
  *
  * Expo Go cannot receive pushes for this app: there, notifications are unavailable.
  */
-import type { RuchoirClient } from "../api/client/index.ts";
+import type { Instance } from "@ruchoir/native-client";
+
+import { native } from "../products/auth.ts";
+import type { RuchoirClient } from "../products/index.ts";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 import { notifications } from "./native";
 import { registrationTargets, requireNoPreview } from "./previewGuard";
-import { serializeSharedAccounts, type SharedAccount } from "./shared";
+import { serializeSharedAccounts, type SharedAccount, type SharedProduct } from "./shared";
 
 /** Where the extensions and the background task read the instances and their tokens. */
 export const SHARED: SecureStore.SecureStoreOptions = {
@@ -32,9 +35,6 @@ export const SHARED: SecureStore.SecureStoreOptions = {
 };
 /** Every signed-in instance, as `[{ server, token }]` (`push/shared.ts`). */
 export const SHARED_ACCOUNTS = "push.accounts";
-/** The single-instance version's copy, deleted when the list is first written. */
-const LEGACY_SERVER = "push.server";
-const LEGACY_TOKEN = "push.token";
 /** The device token last registered, to forget it at sign-out. */
 const DEVICE = "ruchoir.pushDevice";
 /** Android's channel for messages and mentions. */
@@ -51,12 +51,32 @@ export async function phonePushState(): Promise<PhonePush> {
   return status === "granted" && (await SecureStore.getItemAsync(DEVICE)) ? "on" : "off";
 }
 
-/** Hand the extensions (notifications, widgets) every signed-in instance and its token. */
-export async function shareSessions(accounts: SharedAccount[]): Promise<void> {
+/**
+ * Hand the extensions (notifications, widgets) every signed-in instance: its hub with a hub access
+ * token, and the calendar and the chat with theirs only when the manifest lists them (the widgets
+ * follow the manifest). Access tokens are short-lived: the app writes them again whenever it comes
+ * back to the foreground, and an extension that finds one expired shows what it last drew.
+ */
+export async function shareSessions(instances: { instance: Instance }[]): Promise<void> {
+  const accounts = (
+    await Promise.all(
+      instances.map(async ({ instance }): Promise<SharedAccount | null> => {
+        const url = (name: string) => instance.products.find((p) => p.name === name && p.description !== null)?.url;
+        const product = async (name: string): Promise<SharedProduct | undefined> => {
+          const at = url(name);
+          if (!at) return undefined;
+          const token = await native.accessToken(instance.issuer, at).catch(() => null);
+          return token ? { url: at, token } : undefined;
+        };
+        const hub = await product("hub");
+        if (!hub) return null;
+        const [calendar, chat] = await Promise.all([product("calendar"), product("chat")]);
+        return { server: hub.url, token: hub.token, ...(calendar ? { calendar } : {}), ...(chat ? { chat } : {}) };
+      }),
+    )
+  ).filter((a): a is SharedAccount => a !== null);
   if (accounts.length === 0) await SecureStore.deleteItemAsync(SHARED_ACCOUNTS, SHARED).catch(() => {});
   else await SecureStore.setItemAsync(SHARED_ACCOUNTS, serializeSharedAccounts(accounts), SHARED);
-  await SecureStore.deleteItemAsync(LEGACY_TOKEN, SHARED).catch(() => {});
-  await SecureStore.deleteItemAsync(LEGACY_SERVER, SHARED).catch(() => {});
 }
 
 /** The device token, once the system granted notifications; null otherwise (never asks). */

@@ -10,7 +10,7 @@ import { StyleSheet, View } from "react-native";
 import { key } from "../i18n";
 import { useSharedT } from "../i18n/sharedT";
 import { useLocale } from "../i18n/useLocale";
-import { joinClosed, tidyPeriods, whenLabel } from "../api/client/permissionsLogic/index.ts";
+import { joinClosed, tidyPeriods, whenLabel } from "../logic/shared/permissionsLogic/index.ts";
 import { useNow } from "../data/useNow";
 import { guestBannerFor } from "../logic/guestNotices";
 import { shortDay } from "../logic/memberScreen";

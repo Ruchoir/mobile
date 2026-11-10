@@ -1,4 +1,4 @@
-import type { Group, RuchoirClient } from "../api/client/index.ts";
+import type { Group, RuchoirClient } from "../products/index.ts";
 import { useEffect, useReducer } from "react";
 
 import { useFeature } from "../api/features";

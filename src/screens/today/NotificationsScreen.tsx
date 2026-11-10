@@ -5,7 +5,7 @@
  * opens what it is about (the message in its conversation, or the event); "Mark all as read" files
  * them all at once.
  */
-import type { ApiNotification } from "../../api/client/index.ts";
+import type { ApiNotification } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AtSign, Bell, CalendarDays, CheckCheck, Hourglass, MessageCircle, PenLine, Reply, Share2, SmilePlus } from "lucide-react-native";
@@ -13,8 +13,8 @@ import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 
 import { useAccounts } from "../../accounts/AccountsProvider";
-import { mergeInboxes, type InboxItem } from "../../api/client/inbox.ts";
-import { guestNoticeDetail, guestNoticeSummary } from "../../api/client/permissionsLogic/index.ts";
+import { mergeInboxes, type InboxItem } from "../../products/shared/inbox.ts";
+import { guestNoticeDetail, guestNoticeSummary } from "../../logic/shared/permissionsLogic/index.ts";
 import { queueLink } from "../../accounts/pendingLink";
 import { hostOf, unreadEverywhere } from "../../accounts/summary";
 import { useLoad } from "../../data/useLoad";
@@ -194,8 +194,7 @@ export function NotificationsScreen() {
   /** A guest notice's place: the guest on Prolonger for whoever manages, the space for the guest; the space switched first. */
   const go = (target: TapTarget) => {
     if (target.spaceId && target.spaceId !== current?.id) select(target.spaceId);
-    if (target.screen === "member") navigation.navigate("spaceMember", { userId: target.userId, prolong: true, spaceId: target.spaceId });
-    else if (target.screen === "members") navigation.navigate("spaceMembers");
+    if (target.screen === "member" || target.screen === "members") navigation.navigate("tabs", { screen: "today" }); // Propolis's now
     else navigation.navigate("tabs", { screen: "discussions" });
   };
 

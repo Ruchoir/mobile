@@ -4,7 +4,7 @@
  * buttons (for every date of a series). A tap opens its summary. The answer shows at once and comes
  * back if the server refuses it.
  */
-import type { ApiMessage, AttendeeStatus } from "../../api/client/index.ts";
+import type { ApiMessage, AttendeeStatus } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import { Clock, MapPin, Repeat } from "lucide-react-native";
 import { useEffect, useState } from "react";

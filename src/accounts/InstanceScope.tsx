@@ -9,7 +9,7 @@
  * interface (`children`), so switching instance mounts a fresh navigation in the new one and nothing
  * of the last one's screens survives there.
  */
-import type { SessionUser } from "../api/client/index.ts";
+import type { SessionUser } from "../products/index.ts";
 import { useCallback, useEffect, useMemo, type ReactNode } from "react";
 
 import { ApiProvider, useApi } from "../api/useApi";
@@ -18,7 +18,7 @@ import { useLoad } from "../data/useLoad";
 import { useReloadOn } from "../data/useReloadOn";
 import { AccountPrefsSync } from "../prefs/AccountPrefsSync";
 import { RealtimeProvider } from "../realtime/RealtimeProvider";
-import { AuthFailure, SessionContext, type SessionApi } from "../session/SessionProvider";
+import { SessionContext, type SessionApi } from "../session/SessionProvider";
 import { SpaceProvider, useSpace } from "../space/SpaceProvider";
 import { UploadsProvider } from "../uploads/UploadsProvider";
 import { useAccounts, type Account } from "./AccountsProvider";
@@ -43,62 +43,27 @@ export function InstanceScope({ account, user, active, children }: { account: Ac
   );
 }
 
-/** Before a session there is a flow (`SignInFlow`); inside a scope these never run. */
-const notInScope = async (): Promise<never> => {
-  throw new AuthFailure("unknown");
-};
-
 function ScopeSession({ account, user, children }: { account: Account; user: SessionUser; children: ReactNode }) {
   const accounts = useAccounts();
-  const { id, origin, client } = account;
-  const { signOutOf, signOutEverywhere, updateUser: update, holdToken, renew, takeInvitation } = accounts;
+  const { id, origin } = account;
+  const { signOutOf, signOutEverywhere, updateUser: update, takeInvitation } = accounts;
 
   const signOut = useCallback(async (reason?: "locked") => (reason ? signOutEverywhere(reason) : signOutOf(id)), [id, signOutOf, signOutEverywhere]);
   const updateUser = useCallback((patch: Partial<SessionUser>) => update(id, patch), [id, update]);
-
-  // The server ends every session of the account, this one included, so the phone signs in again
-  // with the new password; an account with a second factor goes through the sign-in for it.
-  const changePassword = useCallback(
-    async (current: string, next: string) => {
-      await client.changePassword(current, next);
-      await holdToken(id, null);
-      try {
-        const result = await client.login(user.email, next);
-        if (result.kind === "authenticated" && result.sessionToken) {
-          await holdToken(id, result.sessionToken);
-          return;
-        }
-      } catch {
-        // The sign-in below says what went wrong.
-      }
-      await signOutOf(id);
-      renew(id);
-    },
-    [client, holdToken, id, renew, signOutOf, user.email],
-  );
-
   const takePendingInvitation = useCallback(() => takeInvitation(id), [id, takeInvitation]);
 
   const value = useMemo<SessionApi>(
     () => ({
       state: { kind: "signedIn", server: origin, user },
-      pendingSignUp: null,
-      register: notInScope,
-      confirmCode: notInScope,
-      resendVerification: notInScope,
-      retryPendingSignIn: async () => false,
-      forgetPendingSignUp: () => {},
-      takePendingInvitation,
-      chooseServer: notInScope,
+      // Inside a scope the person is signed in: there is no instance to choose.
+      chooseServer: async () => {},
       changeServer: () => {},
-      signIn: notInScope,
-      verify: notInScope,
-      signInInBrowser: async () => false,
+      signIn: async () => true,
+      takePendingInvitation,
       signOut,
       updateUser,
-      changePassword,
     }),
-    [origin, user, takePendingInvitation, signOut, updateUser, changePassword],
+    [origin, user, takePendingInvitation, signOut, updateUser],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

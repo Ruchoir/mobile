@@ -31,11 +31,9 @@ test("unauthorized_twice_stays_signedOut", () => {
   assert.equal(sessionReducer(once, { type: "unauthorized" }), once);
 });
 
-test("mfaRequired_then_authenticated_signs_in", () => {
-  const out: SessionState = { kind: "signedOut", server: "https://a.test" };
-  const mfa = sessionReducer(out, { type: "mfaRequired", mfaToken: "m1", methods: ["totp", "recovery"] });
-  assert.deepEqual(mfa, { kind: "mfa", server: "https://a.test", mfaToken: "m1", methods: ["totp", "recovery"] });
-  assert.deepEqual(sessionReducer(mfa, { type: "authenticated", user: USER }), signedIn);
+test("authenticated_after_choosing_a_server_signs_in", () => {
+  const out = sessionReducer({ kind: "needsServer" }, { type: "serverChosen", server: "https://a.test" });
+  assert.deepEqual(sessionReducer(out, { type: "authenticated", user: USER }), signedIn);
 });
 
 test("signedOut_keeps_the_server", () => {
@@ -46,11 +44,6 @@ test("changing_server_forgets_the_old_one", () => {
   assert.deepEqual(sessionReducer({ kind: "signedOut", server: "https://a.test" }, { type: "changeServer" }), {
     kind: "needsServer",
   });
-});
-
-test("back_from_the_second_factor_returns_to_the_password", () => {
-  const mfa: SessionState = { kind: "mfa", server: "https://a.test", mfaToken: "t", methods: ["totp"] };
-  assert.deepEqual(sessionReducer(mfa, { type: "signedOut" }), { kind: "signedOut", server: "https://a.test", reason: "signIn" });
 });
 
 test("signing_out_opens_the_welcome", () => {

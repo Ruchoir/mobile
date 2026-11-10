@@ -6,13 +6,19 @@ import { Plus, Users, X } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { useTranslation } from "../../i18n";
+import { key, useTranslation } from "../../i18n";
 import { groupColour } from "../../logic/groupEditor";
 import { systemRoleKey } from "../../logic/memberScreen";
 import { styleCache } from "../../theme/themedStyles";
 import { useTheme, useThemedStyles } from "../../theme/useTheme";
 import { Text } from "../../ui/Text";
-import { SYSTEM_ROLE_LABEL } from "./SpaceMembersScreen";
+
+/** The base and administrator roles, by their dictionary key. */
+const SYSTEM_ROLE_LABEL = {
+  "role.admin": key("role.admin"),
+  "roles.everyone": key("roles.everyone"),
+  "roles.guests": key("roles.guests"),
+} as const;
 
 /** A role's name as the screens say it: the base and administrator roles by their dictionary key, the others as named. */
 export function useRoleLabel() {

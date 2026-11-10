@@ -4,7 +4,7 @@
  * By id, so a message delivered twice (the socket, then the catch-up) is drawn once, and the later
  * copy wins, which is how an edit or a deletion replaces what was shown. Sorted by time, ties by id.
  */
-import type { Message } from "../api/client/index.ts";
+import type { Message } from "../products/index.ts";
 
 export function mergeMessages<M extends Pick<Message, "id" | "createdAt">>(existing: M[], incoming: M[]): M[] {
   if (incoming.length === 0) return existing;

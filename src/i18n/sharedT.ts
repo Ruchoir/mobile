@@ -1,4 +1,4 @@
-import type { Translate } from "../api/client/calendarLogic/index.ts";
+import type { Translate } from "../logic/shared/calendarLogic/index.ts";
 import { useCallback } from "react";
 
 import { useTranslation, type DictKey } from "./index";

@@ -1,4 +1,4 @@
-import type { PresenceChoice } from "../../api/client/index.ts";
+import type { PresenceChoice } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import { Check, CircleCheck, CircleMinus, Clock, EyeOff, type LucideIcon } from "lucide-react-native";
 

@@ -6,7 +6,7 @@ import { useTranslation } from "../i18n";
 import { RootNavigator } from "../navigation/RootNavigator";
 import { useRealtimeEvent } from "../realtime/RealtimeProvider";
 import { BootScreen } from "../screens/boot/BootScreen";
-import { JoinSpaceScreen } from "../screens/space/JoinSpaceScreen";
+import { NoOrganisation } from "./NoOrganisation";
 import { useSession } from "../session/SessionProvider";
 import { useToast } from "../ui/Toast";
 import { PreviewBanner } from "./PreviewBanner";
@@ -70,7 +70,7 @@ export function SpaceGate({ instanceId }: { instanceId: string }) {
   }, [invitation, select, reload, toast, t, acceptInvitation]);
 
   if (!settled) return <BootScreen />;
-  if (status === "none") return <JoinSpaceScreen gate />;
+  if (status === "none") return <NoOrganisation />;
   // The banner sits above the navigation, so it stays over every tab and pushed screen. The navigation
   // starts again when the preview starts or ends: all it showed was read as the other role.
   return (

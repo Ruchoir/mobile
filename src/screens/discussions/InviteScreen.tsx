@@ -4,7 +4,7 @@
  * channels they are added to. Under them, the invitations still waiting, each revocable, as in the
  * web's invitation dialog.
  */
-import { choiceRefusal, presetToInstant, type EndChoice } from "../../api/client/permissionsLogic/index.ts";
+import { choiceRefusal, presetToInstant, type EndChoice } from "../../logic/shared/permissionsLogic/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import { CircleCheck, Link, Mail } from "lucide-react-native";
 import { useState } from "react";

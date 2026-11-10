@@ -1,4 +1,4 @@
-import { formFor, type Preset } from "../../../api/client/calendarLogic/index.ts";
+import { formFor, type Preset } from "../../../logic/shared/calendarLogic/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Check, Repeat } from "lucide-react-native";

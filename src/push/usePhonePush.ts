@@ -50,8 +50,7 @@ export function usePhonePush(navigation: NavigationContainerRefWithCurrent<RootP
     if (!target) return true;
     if (target.spaceId) select(target.spaceId);
     if (target.screen === "conversation") navigation.navigate("conversation", target.params);
-    else if (target.screen === "member") navigation.navigate("spaceMember", { userId: target.userId, prolong: true, spaceId: target.spaceId });
-    else if (target.screen === "members") navigation.navigate("spaceMembers");
+    else if (target.screen === "member" || target.screen === "members") navigation.navigate("tabs", { screen: "today" }); // Propolis's now
     else if (target.screen === "space") navigation.navigate("tabs", { screen: "discussions" });
     else navigation.navigate("tabs", { screen: "agenda" });
     return true;

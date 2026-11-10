@@ -1,4 +1,4 @@
-import type { ApiMessage } from "../../api/client/index.ts";
+import type { ApiMessage } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Pin } from "lucide-react-native";

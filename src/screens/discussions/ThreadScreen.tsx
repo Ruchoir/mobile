@@ -2,7 +2,7 @@
  * A thread: the message it answers on top, "3 replies", the replies, and the composer to answer in
  * it. Live like the conversation: a reply arriving shows here, and only here.
  */
-import type { ApiMessage } from "../../api/client/index.ts";
+import type { ApiMessage } from "../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";

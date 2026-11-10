@@ -1,4 +1,4 @@
-import type { Presence, PresenceChoice } from "../api/client/index.ts";
+import type { Presence, PresenceChoice } from "../products/index.ts";
 
 /** The dot the signed-in person sees on their own avatar: connected, unless they chose otherwise. */
 export function selfPresence(choice: PresenceChoice): Presence {

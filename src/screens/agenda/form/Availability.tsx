@@ -1,5 +1,5 @@
-import type { BusyTimes } from "../../../api/client/index.ts";
-import { addDays, freeSlots, localDay, localMinutes, zonedTime } from "../../../api/client/calendarLogic/index.ts";
+import type { BusyTimes } from "../../../products/index.ts";
+import { addDays, freeSlots, localDay, localMinutes, zonedTime } from "../../../logic/shared/calendarLogic/index.ts";
 import { Search } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";

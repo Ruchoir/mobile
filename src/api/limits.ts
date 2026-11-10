@@ -3,7 +3,7 @@
  * lives. Unknown (an older instance, or no answer) means no check here: the server still refuses
  * with a 413.
  */
-import type { RuchoirClient } from "./client";
+import type { RuchoirClient } from "../products/index.ts";
 
 const limits = new WeakMap<RuchoirClient, Promise<number | undefined>>();
 

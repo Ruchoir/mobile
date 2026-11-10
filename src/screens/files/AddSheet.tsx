@@ -1,6 +1,6 @@
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { BlankKind } from "../../api/client/index.ts";
+import type { BlankKind } from "../../products/index.ts";
 import { Camera, FilePlus2, FileSpreadsheet, FileText, FolderPlus, Image as ImageIcon, Paperclip, Presentation } from "lucide-react-native";
 import { Alert } from "react-native";
 

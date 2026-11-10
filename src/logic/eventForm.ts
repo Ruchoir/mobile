@@ -5,7 +5,7 @@
  *
  * Days are `YYYY-MM-DD`, times `HH:MM` on the wall clock of the draft's zone.
  */
-import type { AttendeeStatus, Calendar, CalendarEvent, EventFile, EventInput, Occurrence } from "../api/client/index.ts";
+import type { AttendeeStatus, Calendar, CalendarEvent, EventFile, EventInput, Occurrence } from "../products/index.ts";
 import {
   addDays,
   buildRule,
@@ -19,7 +19,7 @@ import {
   zonedTime,
   type Preset,
   type RuleForm,
-} from "../api/client/calendarLogic/index.ts";
+} from "./shared/calendarLogic/index.ts";
 
 /** Someone on the list: an account, or an address only. */
 export type DraftAttendee = { key: string; userId?: string; email?: string; name: string; status?: AttendeeStatus };

@@ -6,7 +6,7 @@
  * where iOS may have frozen the socket. Refetching rather than replaying deltas keeps one path for
  * "what is true now", and {@link mergeMessages} keeps a message that arrives both ways from showing twice.
  */
-import type { RealtimeConnection } from "../api/client/index.ts";
+import type { RealtimeConnection } from "../products/index.ts";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
 

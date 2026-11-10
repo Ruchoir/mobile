@@ -5,7 +5,7 @@
  * A file larger than the instance accepts is refused before anything is sent, by name and with the
  * limit. A file from the space's files is attached as itself: it is already there.
  */
-import { isApiError, type InlineImage, type MessageAttachment, type SpaceFile } from "../api/client/index.ts";
+import { isApiError, type InlineImage, type MessageAttachment, type SpaceFile } from "../products/index.ts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 

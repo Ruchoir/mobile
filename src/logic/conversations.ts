@@ -2,7 +2,7 @@
  * The Discussions list (mockup 12): channels and direct conversations in one list, with the filters
  * of the mockup and a search over names.
  */
-import type { Channel, DirectMessage, LastMessage, SystemEvent } from "../api/client/index.ts";
+import type { Channel, DirectMessage, LastMessage, SystemEvent } from "../products/index.ts";
 
 import { plainExcerpt } from "./inline.ts";
 

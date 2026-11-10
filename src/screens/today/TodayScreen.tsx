@@ -1,4 +1,4 @@
-import type { ApiNotification, CalendarColor, Occurrence, SpaceFile } from "../../api/client/index.ts";
+import type { ApiNotification, CalendarColor, Occurrence, SpaceFile } from "../../products/index.ts";
 import { useFocusEffect, useNavigation, type NavigationProp } from "@react-navigation/native";
 import { AtSign, CalendarDays, ChevronRight, Sparkles } from "lucide-react-native";
 import { useCallback, useMemo, useRef } from "react";

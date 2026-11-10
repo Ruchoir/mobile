@@ -1,4 +1,4 @@
-import type { TrashEntry } from "../../api/client/index.ts";
+import type { TrashEntry } from "../../products/index.ts";
 import { RotateCcw, Trash2 } from "lucide-react-native";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 

@@ -1,4 +1,4 @@
-import type { FilesView, SpaceFile, ViewEntry } from "../../api/client/index.ts";
+import type { FilesView, SpaceFile, ViewEntry } from "../../products/index.ts";
 import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Clock, Folder, FolderOpen, Inbox, SearchX, Star, Trash2, Upload } from "lucide-react-native";

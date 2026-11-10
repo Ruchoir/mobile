@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import type { SpaceFile, UploadDuplicate } from "../src/api/client/index.ts";
+import type { SpaceFile, UploadDuplicate } from "../src/products/index.ts";
 
 import {
   answer,

@@ -3,7 +3,7 @@
  * (the web's `refusalMessage`, for the codes a member's roles, standing and end date can meet). `null`
  * is any other failure: the screen then says its own generic sentence.
  */
-import type { refusalOf } from "../api/client/index.ts";
+import type { refusalOf } from "../products/index.ts";
 
 import { key } from "../i18n";
 

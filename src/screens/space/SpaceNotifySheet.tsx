@@ -2,7 +2,7 @@
  * How much the current space notifies me, the web's "Space notifications": the four levels of a
  * conversation, saved the moment one is chosen. "Default" follows the account's preferences.
  */
-import type { NotifyLevel } from "../../api/client/index.ts";
+import type { NotifyLevel } from "../../products/index.ts";
 import { Check } from "lucide-react-native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";

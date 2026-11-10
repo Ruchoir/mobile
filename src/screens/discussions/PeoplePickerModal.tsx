@@ -2,7 +2,7 @@
  * Choosing people for a group, in a sheet of its own: a search and the space's people, drawn as they
  * scroll by. Kept out of the group's form, which then fits on one screen.
  */
-import type { Member } from "../../api/client/index.ts";
+import type { Member } from "../../products/index.ts";
 import { useState } from "react";
 import { Modal, StyleSheet, View } from "react-native";
 

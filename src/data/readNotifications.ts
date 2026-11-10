@@ -3,7 +3,7 @@
  * opens one: otherwise "To look at now" kept a mention that had been read, until the web read it.
  * Then every screen hears that the notifications changed, so Today redraws at once.
  */
-import type { RuchoirClient } from "../api/client/index.ts";
+import type { RuchoirClient } from "../products/index.ts";
 
 import type { RealtimeEvent } from "../realtime/events";
 

@@ -1,4 +1,4 @@
-import type { FileLink } from "../../api/client/index.ts";
+import type { FileLink } from "../../products/index.ts";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import * as Clipboard from "expo-clipboard";
 import { Copy, Link, Trash2 } from "lucide-react-native";

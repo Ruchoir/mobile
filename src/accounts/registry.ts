@@ -1,13 +1,16 @@
 /**
  * The instances the phone knows, as a plain value so it can be tested without a phone (ADR 0007).
  *
- * Each instance has a random `id` (what the Keychain entries and the scopes are named after) and its
- * origin. `active` is the instance whose space is open; `lastSpace` remembers, per instance, the
+ * Each instance has a random `id` (what the scopes are named after), its domain (`origin`, the
+ * key the phone knows it by) and what its discovery found (the hub's manifest and the products'
+ * descriptions), kept so the app opens without the network. `active` is the instance whose space is open; `lastSpace` remembers, per instance, the
  * space opened last, so coming back to an instance lands where it was left. No secret lives here:
- * the session tokens have their own Keychain entries (`store.ts`).
+ * the grants are the native client's, one per issuer (`products/auth.ts`).
  */
 
-export type InstanceEntry = { id: string; origin: string };
+import type { Instance } from "@ruchoir/native-client";
+
+export type InstanceEntry = { id: string; origin: string; instance: Instance };
 
 export type Registry = {
   instances: InstanceEntry[];
@@ -50,21 +53,16 @@ export function setLastSpace(registry: Registry, id: string, spaceId: string): R
   return { ...registry, lastSpace: { ...registry.lastSpace, [id]: spaceId } };
 }
 
-/**
- * The single-instance version's memory (ADR 0005): an instance, perhaps a token, perhaps the space
- * last opened, become the first entry of the registry, so an update asks nobody to sign in again.
- */
-export function migrateLegacy(server: string, space: string | null, id: string): Registry {
-  return { instances: [{ id, origin: server }], active: id, lastSpace: space ? { [id]: space } : {} };
-}
-
 /** A registry read back from the Keychain, or the empty one when it is missing or damaged. */
 export function parseRegistry(json: string | null): Registry {
   if (!json) return EMPTY_REGISTRY;
   try {
     const value = JSON.parse(json) as Partial<Registry>;
     const instances = Array.isArray(value.instances)
-      ? value.instances.filter((e): e is InstanceEntry => typeof e?.id === "string" && typeof e?.origin === "string")
+      ? value.instances.filter(
+          (e): e is InstanceEntry =>
+            typeof e?.id === "string" && typeof e?.origin === "string" && typeof e?.instance?.issuer === "string" && Array.isArray(e.instance.products),
+        )
       : [];
     const active = instances.some((e) => e.id === value.active) ? (value.active as string) : (instances[0]?.id ?? null);
     const lastSpace = value.lastSpace && typeof value.lastSpace === "object" ? value.lastSpace : {};

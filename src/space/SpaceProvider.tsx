@@ -5,7 +5,7 @@
  * phone with the instance (it names nothing sensitive), so the app reopens where it was left; the
  * first space is the default.
  */
-import type { Workspace } from "../api/client/index.ts";
+import type { Workspace } from "../products/index.ts";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import { useApi } from "../api/useApi";

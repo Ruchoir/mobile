@@ -1,11 +1,7 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import { ForgotPasswordScreen } from "../screens/auth/ForgotPasswordScreen";
-import { InvitationLinkScreen } from "../screens/auth/InvitationLinkScreen";
 import { SignInScreen } from "../screens/auth/SignInScreen";
-import { SignUpScreen } from "../screens/auth/SignUpScreen";
-import { VerifyEmailScreen } from "../screens/auth/VerifyEmailScreen";
 import { TutorialScreen } from "../screens/welcome/TutorialScreen";
 import { WelcomeScreen } from "../screens/welcome/WelcomeScreen";
 import { useSession } from "../session/SessionProvider";
@@ -15,9 +11,10 @@ import type { AuthParams } from "./types";
 const Stack = createNativeStackNavigator<AuthParams>();
 
 /**
- * Everything before signing in: the welcome and its tutorial, sign-in, sign-up and its address
- * confirmation, and the forgotten password. A session that ended, a person back from the second
- * factor, or one adding an instance from the app, starts at sign-in; anyone else at the welcome.
+ * Everything before signing in: the welcome and its tutorial, then the sign-in, which finds the
+ * instance and hands over to its Propolis in the authentication browser (sign-up, the forgotten
+ * password and the second factor are Propolis's pages there). A session that ended, or one adding
+ * an instance from the app, starts at sign-in; anyone else at the welcome.
  */
 export function AuthNavigator() {
   const theme = useNavigationTheme();
@@ -29,10 +26,6 @@ export function AuthNavigator() {
         <Stack.Screen name="welcome" component={WelcomeScreen} />
         <Stack.Screen name="tutorial" component={TutorialScreen} />
         <Stack.Screen name="signIn" component={SignInScreen} />
-        <Stack.Screen name="signUp" component={SignUpScreen} />
-        <Stack.Screen name="invitationLink" component={InvitationLinkScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="verifyEmail" component={VerifyEmailScreen} options={{ gestureEnabled: false }} />
-        <Stack.Screen name="forgotPassword" component={ForgotPasswordScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

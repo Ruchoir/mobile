@@ -4,7 +4,7 @@
  * shared logic (`@ruchoir/client/permissionsLogic`) decides the words; this keeps the phone's pieces
  * testable.
  */
-import { bannerOf, previewGone, previewToast } from "../api/client/permissionsLogic/index.ts";
+import { bannerOf, previewGone, previewToast } from "./shared/permissionsLogic/index.ts";
 
 type PreviewLike = { roleId: string; roleName: string; idleSeconds?: number };
 type SpaceLike = { id: string; preview?: PreviewLike };
