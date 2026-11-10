@@ -34,3 +34,15 @@ export function taskManager(): TaskManagerModule | null {
   }
   return taskManagerModule;
 }
+
+type BackgroundTaskModule = typeof import("expo-background-task");
+let backgroundTaskModule: BackgroundTaskModule | null | undefined;
+
+/** expo-background-task (iOS `BGTaskScheduler`, Android WorkManager), in a real build only. */
+export function backgroundTask(): BackgroundTaskModule | null {
+  if (backgroundTaskModule === undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    backgroundTaskModule = phonePushAvailable() ? (require("expo-background-task") as BackgroundTaskModule) : null;
+  }
+  return backgroundTaskModule;
+}

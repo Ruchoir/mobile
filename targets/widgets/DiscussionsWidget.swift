@@ -4,31 +4,54 @@
 import SwiftUI
 import WidgetKit
 
+/// An organisation of the chat (`GET /me/organisations`).
 private struct SpaceSummary: Decodable {
   let id: String
-  let unread: Int?
+  let name: String
 }
 
-struct Note: Decodable, Identifiable {
+/// One entry of the hub's inbox (`GET /me/inbox`): its sentence is drawn from `variables`, which
+/// the product set (`title`, `body`, `actor_name`, `place`).
+private struct InboxEntry: Decodable {
   let id: String
+  let product: String
   let kind: String
-  let actor_name: String?
-  let channel_name: String?
-  let space_name: String
-  let preview: String
-  let created_at: String?
-  /// The instance it comes from, set once read (ADR 0007).
-  var server: String? = nil
+  let category: String
+  let created_at: String
+  let variables: [String: InboxValue]?
 
-  func from(_ server: String) -> Note {
-    var note = self
-    note.server = server
-    return note
+  func text(_ key: String) -> String? {
+    if case .text(let value) = variables?[key] { return value }
+    return nil
   }
 }
 
-private struct NotePage: Decodable {
-  let notifications: [Note]
+/// A value of an entry's `variables`: only its strings are read.
+private enum InboxValue: Decodable {
+  case text(String)
+  case other
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.singleValueContainer()
+    if let value = try? container.decode(String.self) { self = .text(value) } else { self = .other }
+  }
+}
+
+/// A page of the hub's inbox, with the person's unread count.
+private struct InboxPage: Decodable {
+  let entries: [InboxEntry]
+  let unread_count: Int
+}
+
+/// Someone who addressed the reader, from the inbox.
+struct Note: Identifiable {
+  let id: String
+  let actor_name: String?
+  let place: String?
+  let title: String
+  let created_at: String
+  /// The instance it comes from (ADR 0007).
+  let server: String
 }
 
 private struct LastMessage: Decodable {
@@ -104,27 +127,30 @@ struct DiscussionsProvider: TimelineProvider {
     guard Instance.signedIn else {
       return DiscussionsEntry(date: .now, unread: nil, notes: [], conversations: [], failed: false)
     }
-    // The unread count and the notes of every instance (ADR 0007); the conversations of the space on
-    // screen, on its own instance.
-    async let everySpace = Instance.everywhere("/me/spaces", as: [SpaceSummary].self)
-    async let pages = Instance.everywhere("/notifications?unread=true&limit=10", as: NotePage.self)
-    async let spaces = Instance.get("/me/spaces", as: [SpaceSummary].self)
-    guard let everywhere = await everySpace else {
+    // The unread count and the notes of every instance's hub (ADR 0007); the conversations of the
+    // space on screen, from the chat of its own instance.
+    async let pages = Instance.everywhere("/me/inbox?unread=true&limit=10", as: InboxPage.self, product: .hub)
+    async let spaces = Instance.get("/me/organisations", as: [SpaceSummary].self, product: .chat)
+    guard let answered = await pages else {
       return DiscussionsEntry(date: .now, unread: 0, notes: [], conversations: [], failed: true)
     }
-    let unread = everywhere.flatMap(\.value).reduce(0) { $0 + ($1.unread ?? 0) }
-    let spoken: Set<String> = ["mention", "reply", "dm", "broadcast"]
-    let notes = (await pages ?? [])
-      .flatMap { answer in answer.value.notifications.map { $0.from(answer.server) } }
-      .filter { spoken.contains($0.kind) }
-      .sorted { ($0.created_at ?? "") > ($1.created_at ?? "") }
+    let unread = answered.reduce(0) { $0 + $1.value.unread_count }
+    // What someone said to the reader: the hub's categories for a mention, a reply, a direct message.
+    let spoken: Set<String> = ["mention", "reply", "direct"]
+    let notes = answered
+      .flatMap { answer in
+        answer.value.entries.filter { $0.product == "chat" && spoken.contains($0.category) }.map { entry in
+          Note(id: entry.id, actor_name: entry.text("actor_name"), place: entry.text("place"), title: entry.text("title") ?? "", created_at: entry.created_at, server: answer.server)
+        }
+      }
+      .sorted { $0.created_at > $1.created_at }
     let all = await spaces ?? []
     // The space on screen in the app, else the first one.
     let space = Instance.space.flatMap { id in all.first { $0.id == id }?.id } ?? all.first?.id
     var conversations: [Conversation] = []
     if let space {
-      async let channels = Instance.get("/spaces/\(space)/channels", as: [ChannelRow].self)
-      async let directs = Instance.get("/spaces/\(space)/dms", as: [DirectRow].self)
+      async let channels = Instance.get("/organisations/\(space)/channels", as: [ChannelRow].self, product: .chat)
+      async let directs = Instance.get("/organisations/\(space)/dms", as: [DirectRow].self, product: .chat)
       for row in (await channels ?? []) where row.member {
         conversations.append(Conversation(id: row.id, name: row.name, channel: true, unread: row.unread, at: row.last_message.flatMap { Instant.parse($0.created_at) }, preview: preview(row.last_message), space: space))
       }
@@ -186,7 +212,7 @@ struct DiscussionsView: View {
 
   /// "Léa mentioned you".
   private func line(_ note: Note) -> String {
-    let who = note.actor_name.flatMap { $0.split(separator: " ").first.map(String.init) } ?? note.channel_name ?? note.space_name
+    let who = note.actor_name.flatMap { $0.split(separator: " ").first.map(String.init) } ?? note.place ?? note.title
     return "\(who) \(Words.mentionedYou)"
   }
 

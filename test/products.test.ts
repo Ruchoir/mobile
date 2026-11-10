@@ -30,8 +30,9 @@ test("a_chat_entry_of_the_hub_reads_as_the_notification_rows_expect", () => {
 });
 
 test("a_calendar_kind_is_named_with_its_product_and_an_unknown_kind_is_a_message", () => {
-  assert.equal(toNotification(entry({ product: "calendar", kind: "reminder", variables: {} })).kind, "calendar_reminder");
-  assert.equal(toNotification(entry({ kind: "something_new", read_at: "2026-11-10T11:00:00Z" })).kind, "message");
+  assert.equal(toNotification(entry({ product: "calendar", kind: "calendar.reminder", variables: {} })).kind, "calendar_reminder");
+  assert.equal(toNotification(entry({ product: "chat", kind: "chat.mention", variables: {} })).kind, "mention");
+  assert.equal(toNotification(entry({ kind: "chat.something_new", read_at: "2026-11-10T11:00:00Z" })).kind, "message");
   assert.equal(toNotification(entry({ read_at: "2026-11-10T11:00:00Z" })).read, true);
 });
 

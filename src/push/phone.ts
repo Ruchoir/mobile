@@ -26,7 +26,7 @@ import { Platform } from "react-native";
 
 import { notifications } from "./native";
 import { registrationTargets, requireNoPreview } from "./previewGuard";
-import { serializeSharedAccounts, type SharedAccount, type SharedProduct } from "./shared";
+import { parseSharedAccounts, serializeSharedAccounts, type SharedAccount, type SharedProduct } from "./shared";
 
 /** Where the extensions and the background task read the instances and their tokens. */
 export const SHARED: SecureStore.SecureStoreOptions = {
@@ -54,10 +54,16 @@ export async function phonePushState(): Promise<PhonePush> {
 /**
  * Hand the extensions (notifications, widgets) every signed-in instance: its hub with a hub access
  * token, and the calendar and the chat with theirs only when the manifest lists them (the widgets
- * follow the manifest). Access tokens are short-lived: the app writes them again whenever it comes
- * back to the foreground, and an extension that finds one expired shows what it last drew.
+ * follow the manifest). Only access tokens leave the app, never the refresh token (which stays in
+ * the native client's own keychain items): they are short-lived, so the app writes them again when
+ * it comes back to the foreground and from its background task (`push/refresh.ts`), and an
+ * extension that finds one expired shows what it last drew.
+ *
+ * An instance whose tokens could not be had this time (offline, the phone locked) keeps the entry it
+ * had, so a failed refresh never takes it off the home screen; one the app no longer holds leaves.
  */
 export async function shareSessions(instances: { instance: Instance }[]): Promise<void> {
+  const before = parseSharedAccounts(await SecureStore.getItemAsync(SHARED_ACCOUNTS, SHARED).catch(() => null));
   const accounts = (
     await Promise.all(
       instances.map(async ({ instance }): Promise<SharedAccount | null> => {
@@ -69,7 +75,7 @@ export async function shareSessions(instances: { instance: Instance }[]): Promis
           return token ? { url: at, token } : undefined;
         };
         const hub = await product("hub");
-        if (!hub) return null;
+        if (!hub) return before.find((a) => a.server === url("hub")) ?? null;
         const [calendar, chat] = await Promise.all([product("calendar"), product("chat")]);
         return { server: hub.url, token: hub.token, ...(calendar ? { calendar } : {}), ...(chat ? { chat } : {}) };
       }),

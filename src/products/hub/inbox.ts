@@ -33,13 +33,21 @@ const KINDS: ApiNotification["kind"][] = [
   "guest_expiry_soon", "guest_access_ending",
 ];
 
+/**
+ * The app's name for a kind the hub carries as the product published it (`chat.mention`,
+ * `calendar.reminder`): the chat's as the monolith named them, the calendar's with its prefix.
+ */
+export function kindName(kind: string): string {
+  const [product, name] = kind.includes(".") ? [kind.slice(0, kind.indexOf(".")), kind.slice(kind.indexOf(".") + 1)] : ["", kind];
+  return product === "calendar" ? `calendar_${name}` : name;
+}
+
 const text = (value: unknown): string => (typeof value === "string" ? value : "");
 
 /** An inbox entry as the app's notification rows read it. */
 export function toNotification(entry: InboxEntryDto): ApiNotification {
   const v = entry.variables ?? {};
-  // A calendar's kinds are named without the product (`reminder`), the chat's as the monolith did.
-  const named = entry.product === "calendar" && !entry.kind.startsWith("calendar_") ? `calendar_${entry.kind}` : entry.kind;
+  const named = kindName(entry.kind);
   const kind = (KINDS as string[]).includes(named) ? (named as ApiNotification["kind"]) : "message";
   return {
     id: entry.id,

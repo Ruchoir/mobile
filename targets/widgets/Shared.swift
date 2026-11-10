@@ -1,14 +1,40 @@
-// What both widgets share: the sessions the app hands over, the instances' answers, the words.
+// What both widgets share: the instances the app hands over, their products' answers, the words.
 
 import Foundation
 import Security
 import SwiftUI
 import WidgetKit
 
-/// A signed-in instance as the app hands it over: where to ask, and with which token.
+/// A product of an instance, as the app hands it over: its origin and a short-lived access token
+/// issued for it alone (`src/push/phone.ts`). The app renews the tokens; the widgets never can.
+struct SharedProduct: Decodable {
+  let url: String
+  let token: String
+}
+
+/// One signed-in instance as the app hands it over (`src/push/shared.ts`): its hub (`server`,
+/// `token`), and its calendar and chat when the instance has them.
 struct SharedAccount: Decodable {
   let server: String
   let token: String
+  let calendar: SharedProduct?
+  let chat: SharedProduct?
+
+  /// The hub, as a product like the others.
+  var hub: SharedProduct { SharedProduct(url: server, token: token) }
+}
+
+/// Which of an instance's products a widget asks.
+enum Product {
+  case hub, calendar, chat
+
+  func of(_ account: SharedAccount) -> SharedProduct? {
+    switch self {
+    case .hub: return account.hub
+    case .calendar: return account.calendar
+    case .chat: return account.chat
+    }
+  }
 }
 
 /// The items the app writes with expo-secure-store (service `ruchoir.push`) in the keychain group it
@@ -32,21 +58,30 @@ enum SharedSession {
 
   static func value(_ key: String) -> String? { read(key) }
 
-  /// Every signed-in instance; an entry that is not an `https://` address is left out.
+  /// Every signed-in instance; an entry whose hub is not an `https://` address is left out, and so
+  /// is a product that is not.
   static var accounts: [SharedAccount] {
     guard let json = read("push.accounts"), let data = json.data(using: .utf8),
       let list = try? JSONDecoder().decode([SharedAccount].self, from: data)
     else { return [] }
-    return list.filter { $0.server.hasPrefix("https://") }
+    return list.filter { $0.server.hasPrefix("https://") }.map { account in
+      SharedAccount(
+        server: account.server,
+        token: account.token,
+        calendar: account.calendar.flatMap { $0.url.hasPrefix("https://") ? $0 : nil },
+        chat: account.chat.flatMap { $0.url.hasPrefix("https://") ? $0 : nil }
+      )
+    }
   }
 }
 
 enum Instance {
-  /// GET a path of one instance's API with its session; nil when signed out or unreachable.
-  static func get<T: Decodable>(_ path: String, as type: T.Type, from account: SharedAccount) async -> T? {
-    guard let url = URL(string: account.server + "/api/v1" + path) else { return nil }
+  /// GET a path of one product's API with its token; nil when the instance has no such product, the
+  /// token expired (the app has not renewed it yet) or the product cannot be reached.
+  static func get<T: Decodable>(_ path: String, as type: T.Type, from account: SharedAccount, product: Product) async -> T? {
+    guard let target = product.of(account), let url = URL(string: target.url + "/api/v1" + path) else { return nil }
     var request = URLRequest(url: url, timeoutInterval: 15)
-    request.setValue("Bearer " + account.token, forHTTPHeaderField: "Authorization")
+    request.setValue("Bearer " + target.token, forHTTPHeaderField: "Authorization")
     request.setValue("application/json", forHTTPHeaderField: "Accept")
     guard let (data, response) = try? await URLSession.shared.data(for: request),
       (response as? HTTPURLResponse)?.statusCode == 200
@@ -54,30 +89,32 @@ enum Instance {
     return try? JSONDecoder().decode(T.self, from: data)
   }
 
-  /// GET a path of the instance of the space on screen in the app.
-  static func get<T: Decodable>(_ path: String, as type: T.Type) async -> T? {
-    guard let account = onScreen else { return nil }
-    return await get(path, as: type, from: account)
+  /// GET a path of a product of the instance of the space on screen in the app.
+  static func get<T: Decodable>(_ path: String, as type: T.Type, product: Product) async -> T? {
+    guard let account = onScreen(with: product) else { return nil }
+    return await get(path, as: type, from: account, product: product)
   }
 
-  /// The same path of every instance, each answer with its instance; nil when none answered. One
-  /// that is down or signed out never keeps the others from showing. Asked one after the other: a
-  /// phone holds a few instances, and a widget's timeline has the time.
-  static func everywhere<T: Decodable>(_ path: String, as type: T.Type) async -> [(server: String, value: T)]? {
+  /// The same path of the same product on every instance that has it, each answer with its
+  /// instance; nil when none answered. One that is down or signed out never keeps the others from
+  /// showing. Asked one after the other: a phone holds a few instances, and a widget's timeline has
+  /// the time.
+  static func everywhere<T: Decodable>(_ path: String, as type: T.Type, product: Product) async -> [(server: String, value: T)]? {
     var answers: [(server: String, value: T)] = []
-    for account in SharedSession.accounts {
-      if let value = await get(path, as: type, from: account) { answers.append((account.server, value)) }
+    for account in SharedSession.accounts where product.of(account) != nil {
+      if let value = await get(path, as: type, from: account, product: product) { answers.append((account.server, value)) }
     }
     return answers.isEmpty ? nil : answers
   }
 
   static var signedIn: Bool { !SharedSession.accounts.isEmpty }
 
-  /// The instance of the space on screen in the app (`src/widgets/share.ts`), else the first.
-  static var onScreen: SharedAccount? {
-    let accounts = SharedSession.accounts
+  /// The instance of the space on screen in the app (`src/widgets/share.ts`) when it has `product`,
+  /// else the first that has it.
+  static func onScreen(with product: Product) -> SharedAccount? {
+    let accounts = SharedSession.accounts.filter { product.of($0) != nil }
     let server = SharedSession.value("widget.server")
-    return accounts.first { $0.server == server } ?? accounts.first
+    return accounts.first { $0.server == server || $0.chat?.url == server || $0.calendar?.url == server } ?? accounts.first
   }
 
   /// The space on screen in the app, and the theme and style chosen there (`src/widgets/share.ts`).
