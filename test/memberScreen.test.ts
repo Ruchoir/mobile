@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { memberAccessFor, roleIdsToSave, type RoleChoice } from "../src/logic/shared/permissionsLogic/index.ts";
+import { memberAccessFor, roleIdsToSave, type RoleChoice } from "@ruchoir/permissions-logic";
 
 import {
   changeCount,

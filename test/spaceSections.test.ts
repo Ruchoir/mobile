@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { rightsOf, spaceGates } from "../src/logic/shared/permissionsLogic/index.ts";
+import { rightsOf, spaceGates } from "@ruchoir/permissions-logic";
 
 import { READY, sectionsFor, type Section } from "../src/logic/spaceSections.ts";
 

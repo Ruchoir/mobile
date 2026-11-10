@@ -5,7 +5,7 @@
  * by every screen that watches it.
  */
 import type { Group } from "../products/index.ts";
-import { rightsOf } from "./shared/permissionsLogic/index.ts";
+import { rightsOf } from "@ruchoir/permissions-logic";
 
 /** Whether the viewer may read the groups of the space (and the instance has them at all). */
 export function mayListGroups(space: { role: string; myPermissions?: string[] } | undefined, supported: boolean): boolean {

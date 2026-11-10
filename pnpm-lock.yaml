@@ -34,6 +34,9 @@ importers:
       '@ruchoir/native-client':
         specifier: 0.6.0
         version: 0.6.0
+      '@ruchoir/permissions-logic':
+        specifier: 0.6.0
+        version: 0.6.0
       expo:
         specifier: 57.0.27
         version: 57.0.27(777bc096ed075ff244c947073ba973a5)
@@ -1043,6 +1046,9 @@ packages:
 
   '@ruchoir/native-client@0.6.0':
     resolution: {integrity: sha512-+CaP2/jdJdDl7wmpzGhoENVGfZ2/GGeKF+f6r+pQjawKUqNS6I2ZQ4sgFsKVWYOENfyvQjTDTXrjQPNS+ScVPw==, tarball: https://npm.pkg.github.com/download/@ruchoir/native-client/0.6.0/8d55bf8463ac4d563b672a72a909e24cec119aa1}
+
+  '@ruchoir/permissions-logic@0.6.0':
+    resolution: {integrity: sha512-+tb6W87jWzTNHLFMcQCngMfVJzus1xdGOG3ZTb2C41rr4/fzqk0La+WtXjISCGK04J105YhapPgKQNH4aSrGsw==, tarball: https://npm.pkg.github.com/download/@ruchoir/permissions-logic/0.6.0/0e82fd50861c33abe55c0737dd16db56f86170d9}
 
   '@sinclair/typebox@0.27.12':
     resolution: {integrity: sha512-hhyNJ+nbR6ZR7pToHvllEFun9TL0sbL+tk/ON75lo+Xas054uez98qRbsuNt7MBCyZKK4+8Yli/OAGZhmfBZ/g==}
@@ -5215,6 +5221,8 @@ snapshots:
       - '@types/react'
 
   '@ruchoir/native-client@0.6.0': {}
+
+  '@ruchoir/permissions-logic@0.6.0': {}
 
   '@sinclair/typebox@0.27.12': {}
 

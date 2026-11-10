@@ -10,7 +10,7 @@
     "start": "EXPO_NO_TELEMETRY=1 expo start --go",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "node --test \"test/**/*.test.ts\"",
+    "test": "node --import ./test/typescript-packages.mjs --test \"test/**/*.test.ts\"",
     "bundle:ios": "EXPO_NO_TELEMETRY=1 expo export --platform ios --output-dir dist-check"
   },
   "dependencies": {
@@ -21,6 +21,7 @@
     "@react-navigation/native": "7.5.0",
     "@react-navigation/native-stack": "7.20.0",
     "@ruchoir/native-client": "0.6.0",
+    "@ruchoir/permissions-logic": "0.6.0",
     "expo": "57.0.27",
     "expo-background-task": "57.0.21",
     "expo-clipboard": "57.0.2",

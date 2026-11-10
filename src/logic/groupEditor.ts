@@ -4,7 +4,7 @@
  * a group in the list, who can be picked to join, and the role toggles with their locks. The API is
  * the judge of every write; this keeps the phone from offering what it would refuse. Pure, tested by Node.
  */
-import { addBlockFor, addPeopleLock, additionLock, appointLock, groupRow, offersManagement, removalOf, roleToggleLock, type AdditionLock, type PanelGroup } from "./shared/permissionsLogic/index.ts";
+import { addBlockFor, addPeopleLock, additionLock, appointLock, groupRow, offersManagement, removalOf, roleToggleLock, type AdditionLock, type PanelGroup } from "@ruchoir/permissions-logic";
 
 import { rolesWith } from "./roleEditor.ts";
 
@@ -118,4 +118,4 @@ export function settledRoles(pending: string[] | null, actual: string[]): string
   return same ? null : pending;
 }
 
-export { groupColour } from "./shared/permissionsLogic/index.ts";
+export { groupColour } from "@ruchoir/permissions-logic";

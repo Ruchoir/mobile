@@ -4,7 +4,7 @@
  * roles and a tag for the group's managers. Whoever may change the group also gets a way into its
  * editor.
  */
-import { groupPeople } from "../../logic/shared/permissionsLogic/index.ts";
+import { groupPeople } from "@ruchoir/permissions-logic";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Users } from "lucide-react-native";

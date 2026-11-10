@@ -188,7 +188,7 @@ Licence: `AGPL-3.0-only` (`LICENSE`).
 - **Gate by permissions, never by role strings.** A control is shown on `rightsOf(space)` /
   `useRights().gates` (space level) and `useChannelGates(channel)` / `channelGates` (a channel's
   `myPermissions`: send, react, attach, pin, moderate, manage, members, delete), the same functions as
-  the web (`src/logic/shared/permissionsLogic`). The role string is only the fallback of an instance without
+  the web (`@ruchoir/permissions-logic` of Ruchoir/core). The role string is only the fallback of an instance without
   the permissions, inside the places `test/noRoleGates.test.ts` lists, counted per file (a new
   `role === "admin"`, `"guest"` comparison, `includes(role)`, `switch (role)` or `canAdminister(` fails it). The
   fallbacks of an older instance live in `logic/spaceRoles.ts` (`legacyDoors`, `PHONE_LEGACY_CHANNEL`): a screen
@@ -246,7 +246,8 @@ src/session/           instance choice (server.ts), the session reducer (machine
 src/products/          the native client and Propolis's pages (auth.ts), each product's API
                        (hub, chat, drive, calendar), the client gathering them (client.ts), the
                        calls no product serves (unavailable.ts), the shapes (shared/)
-src/logic/shared/      the logic shared with the web pages: calendar, emoji, files, permissions
+src/logic/shared/      the logic shared with the web pages: calendar, emoji, files (the permissions come
+                       from `@ruchoir/permissions-logic`)
 src/prefs/             the preferences kept on the phone (prefs.ts, tested) and their store (store.ts):
                        accent, day or night, text size, language, agenda view, week start, event length;
                        AccountPrefsSync.tsx keeps the account's in line with every instance

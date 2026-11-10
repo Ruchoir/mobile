@@ -10,7 +10,7 @@ import {
   endLabel,
   presetToInstant,
   type EndChoice,
-} from "../logic/shared/permissionsLogic/index.ts";
+} from "@ruchoir/permissions-logic";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";

@@ -14,7 +14,7 @@ import { FlatList, Pressable, StyleSheet, View } from "react-native";
 
 import { useAccounts } from "../../accounts/AccountsProvider";
 import { mergeInboxes, type InboxItem } from "../../products/shared/inbox.ts";
-import { guestNoticeDetail, guestNoticeSummary } from "../../logic/shared/permissionsLogic/index.ts";
+import { guestNoticeDetail, guestNoticeSummary } from "@ruchoir/permissions-logic";
 import { queueLink } from "../../accounts/pendingLink";
 import { hostOf, unreadEverywhere } from "../../accounts/summary";
 import { useLoad } from "../../data/useLoad";
