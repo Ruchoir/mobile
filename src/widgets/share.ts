@@ -1,0 +1,60 @@
+/**
+ * What the widgets need from the app besides the sessions (`push/phone.ts`): the space on screen and
+ * its instance, whose conversations they list, and the theme and style chosen in the app
+ * ("violet-dark", "marine"), which they follow as the widget mockups ask. Written in the keychain group the extensions share, read by
+ * `targets/widgets` on the iPhone and `widgets/android.tsx` on Android.
+ */
+import * as SecureStore from "expo-secure-store";
+import { useEffect, useRef } from "react";
+import { AppState } from "react-native";
+
+import { useApi } from "../api/useApi";
+import { usePrefs } from "../prefs/store";
+import { SHARED } from "../push/phone";
+import { useSpace } from "../space/SpaceProvider";
+import { themeName } from "../theme/tokens";
+import { useTheme } from "../theme/useTheme";
+import { refreshWidgets } from "./index";
+
+import { SHARED_SPACE, SHARED_SPACE_SERVER, SHARED_STYLE, SHARED_THEME } from "./keys";
+
+/** Keep the widgets' space and theme in step with the app's. Mounted by the instance on screen. */
+export function useWidgetLook(): void {
+  const server = useApi().options().baseUrl;
+  const { current } = useSpace();
+  const { accent, style } = usePrefs();
+  const { dark } = useTheme();
+  const theme = themeName(accent, dark);
+  const space = current?.id;
+  const written = useRef("");
+  useEffect(() => {
+    if (!space) return;
+    const now = `${server}|${space}|${theme}|${style}`;
+    if (written.current === now) return;
+    written.current = now;
+    void Promise.all([
+      SecureStore.setItemAsync(SHARED_SPACE_SERVER, server, SHARED),
+      SecureStore.setItemAsync(SHARED_SPACE, space, SHARED),
+      SecureStore.setItemAsync(SHARED_THEME, theme, SHARED),
+      SecureStore.setItemAsync(SHARED_STYLE, style, SHARED),
+    ])
+      .then(() => refreshWidgets())
+      .catch(() => {
+        written.current = "";
+      });
+  }, [server, space, theme, style]);
+}
+
+/**
+ * Draw the widgets again when the app goes to the background and when it comes back: what was read,
+ * sent or planned in between is then on the home screen the moment the person returns to it. Mounted
+ * once, signed in.
+ */
+export function useWidgetRefresh(): void {
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "background" || state === "active") void refreshWidgets();
+    });
+    return () => subscription.remove();
+  }, []);
+}

@@ -1,0 +1,228 @@
+/**
+ * A thread: the message it answers on top, "3 replies", the replies, and the composer to answer in
+ * it. Live like the conversation: a reply arriving shows here, and only here.
+ */
+import type { ApiMessage } from "../../api/client/index.ts";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FlatList, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useSupports } from "../../api/features";
+import { useApi } from "../../api/useApi";
+import { Composer } from "../../compose/Composer";
+import { useAttachRequests } from "../../compose/requests";
+import { useAttachments } from "../../compose/useAttachments";
+import { useReact } from "../../compose/useReact";
+import { useMentionGroups } from "../../data/mentionGroups";
+import { useSpaceMembers } from "../../data/members";
+import { useLoad } from "../../data/useLoad";
+import { useReloadOn } from "../../data/useReloadOn";
+import { threadFooter } from "../../logic/threadCompose";
+import { affects } from "../../realtime/events";
+import { useTranslation } from "../../i18n";
+import type { RootParams } from "../../navigation/types";
+import { useSession } from "../../session/SessionProvider";
+import { useChannelGates } from "../../space/rights";
+import { useSpace } from "../../space/SpaceProvider";
+import { styleCache } from "../../theme/themedStyles";
+import { useTheme, useThemedStyles } from "../../theme/useTheme";
+import { BackHeader } from "../../ui/BackHeader";
+import { LoadState } from "../../ui/States";
+import { Text } from "../../ui/Text";
+import { KeyboardArea } from "../../ui/KeyboardArea";
+import { useEditing, useLiveMessages, useMyMentions, useOutboxRows, useTypingLine } from "./feed";
+import { MessageRow } from "./MessageRow";
+
+/** Two replies by one person less than five minutes apart read as one block, as in the conversation. */
+const RUN_GAP_MS = 5 * 60 * 1000;
+
+type Row = { kind: "message"; message: ApiMessage; head: boolean; root?: boolean } | { kind: "count"; count: number };
+
+export function ThreadScreen() {
+  const { getChannels, getReplies } = useApi();
+  const { params } = useRoute<RouteProp<RootParams, "thread">>();
+  const { conversationId, channelId, rootId, title } = params;
+  const { t } = useTranslation();
+  const { c, shape } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { state } = useSession();
+  const me = state.kind === "signedIn" ? state.user : null;
+  const navigation = useNavigation();
+  const react = useReact();
+  const { current } = useSpace();
+  const members = useSpaceMembers(current?.id);
+  const mentionGroups = useMentionGroups(current?.id);
+  const channels = useLoad(current ? `channels:${current.id}` : null, (signal) => getChannels(current!.id, signal));
+  useReloadOn((e) => !!current && affects.channelRights(e, current.id), channels.reload);
+  const channel = channelId ? channels.data?.find((ch) => ch.id === channelId) : undefined;
+  const gates = useChannelGates(channel);
+  const footer = threadFooter({ signedIn: !!me, inChannel: !!channelId, channelsLoaded: !!channels.data, canSend: gates.send });
+  const draftKey = `thread:${rootId}`;
+  // "Also send to #general" under the field, where the instance can.
+  const canAlso = useSupports("reply_to_channel");
+  const channelName = channelId ? (channels.data?.find((ch) => ch.id === channelId)?.name ?? title) : undefined;
+  const alsoLabel = !canAlso
+    ? undefined
+    : channelName
+      ? t("thread.alsoInChannel", { channel: channelName })
+      : t("thread.alsoInConversation");
+
+  const replies = useLoad(`replies:${rootId}`, (signal) => getReplies(rootId, signal));
+  const loaded = useMemo(
+    () => (replies.data ? [...(params.root ? [params.root] : []), ...replies.data] : undefined),
+    [replies.data, params.root],
+  );
+  const belongs = useCallback((m: ApiMessage) => m.id === rootId || m.parentId === rootId, [rootId]);
+  const { messages, patch } = useLiveMessages(conversationId, loaded, belongs, me, members.list);
+  const outbox = useOutboxRows(conversationId, rootId, messages, me);
+  const edit = useEditing(draftKey, messages, patch);
+  const typing = useTypingLine(conversationId, me, members.list);
+  const myNames = useMyMentions(me);
+
+  const attachments = useAttachments(conversationId);
+  useAttachRequests(draftKey, (request) => {
+    if (request.kind === "local") void attachments.add(request.files);
+    else attachments.addSpaceFile(request.file);
+  });
+
+  // Newest first for an inverted list: the replies (mine on their way last), the count, the root.
+  const rows = useMemo(() => {
+    const root = messages.find((m) => m.id === rootId);
+    const answers = [...messages.filter((m) => m.id !== rootId), ...outbox.pending.map((row) => row.message)];
+    const out: Row[] = [];
+    for (let i = answers.length - 1; i >= 0; i--) {
+      const m = answers[i];
+      const older = answers[i - 1];
+      const sameRun = older && older.author === m.author && Date.parse(m.createdAt) - Date.parse(older.createdAt) < RUN_GAP_MS;
+      out.push({ kind: "message", message: m, head: !sameRun });
+    }
+    out.push({ kind: "count", count: answers.length });
+    if (root) out.push({ kind: "message", message: root, head: true, root: true });
+    return out;
+  }, [messages, outbox.pending, rootId]);
+
+  // A reply asked for (from a channel's pinned tab): scrolled to once it is loaded, and lit a moment.
+  const list = useRef<FlatList<Row>>(null);
+  const [flash, setFlash] = useState(params.focusId ?? null);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!params.focusId || focused.current) return;
+    const index = rows.findIndex((row) => row.kind === "message" && row.message.id === params.focusId);
+    if (index < 0) return;
+    focused.current = true;
+    list.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true });
+  }, [rows, params.focusId]);
+  const shown = !!replies.data;
+  useEffect(() => {
+    if (!flash || !shown) return;
+    const timer = setTimeout(() => setFlash(null), 2000);
+    return () => clearTimeout(timer);
+  }, [flash, shown]);
+
+  return (
+    <SafeAreaView edges={["top"]} style={styles.fill}>
+      <BackHeader title={t("thread.title")} subtitle={t("thread.in", { name: channelId ? `#${title}` : title })} />
+      <KeyboardArea composer slide={!!replies.data} style={[styles.fill, { borderTopWidth: shape.hairline, borderTopColor: c.line }]}>
+        {!replies.data ? (
+          <LoadState error={replies.error} onRetry={replies.reload} />
+        ) : (
+          <FlatList
+            ref={list}
+            inverted
+            // The list is inverted: its header is its bottom, some air between the last reply and the bar.
+            ListHeaderComponent={<View style={styles.end} />}
+            data={rows}
+            keyExtractor={(row) => (row.kind === "count" ? "count" : row.message.id)}
+            onScrollToIndexFailed={(info) => {
+              list.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false });
+              setTimeout(() => list.current?.scrollToIndex({ index: info.index, viewPosition: 0.5, animated: false }), 120);
+            }}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => {
+              if (item.kind === "count") {
+                return (
+                  <View style={styles.count}>
+                    <Text variant="tiny" tone="muted">
+                      {item.count > 0 ? t("message.replies", { count: item.count }) : t("thread.noReplies")}
+                    </Text>
+                    <View style={[styles.rule, { backgroundColor: c.line }]} />
+                  </View>
+                );
+              }
+              const m = item.message;
+              const local = outbox.byId.get(m.id);
+              const body = m.body.toLowerCase();
+              return (
+                <MessageRow
+                  message={m}
+                  head={item.head}
+                  mentionsMe={!local && myNames.some((n) => body.includes(n))}
+                  avatar={members.avatarOf(m.author)}
+                  mentionNames={members.mentionNames}
+                  groups={mentionGroups}
+                  pending={local?.state}
+                  onRetry={local ? () => outbox.retry(local.localId) : undefined}
+                  onDiscard={local ? () => outbox.drop(local.localId) : undefined}
+                  myUserId={me?.id}
+                  onLongPress={() =>
+                    navigation.navigate("messageActions", { conversationId, channelId, title, draftKey, inThread: true, message: m })
+                  }
+                  onReact={(emoji) => react(conversationId, m, emoji)}
+                  onAddReaction={() => navigation.navigate("emojiPicker", { conversationId, message: m })}
+                  reactable={gates.react}
+                  highlighted={flash === m.id}
+                />
+              );
+            }}
+          />
+        )}
+        {footer === "waiting" ? (
+          // The channel's rights are not here yet: a gap of the note's height, neither note nor composer.
+          <View style={styles.readOnly} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Text variant="small" tone="muted"> </Text>
+          </View>
+        ) : footer === "readOnly" ? (
+          <View style={styles.readOnly}>
+            <Text variant="small" tone="muted">
+              {t("compose.readOnly")}
+            </Text>
+          </View>
+        ) : footer === "composer" && me ? (
+          <Composer
+            key={edit.editing ? `edit:${edit.editing.id}` : draftKey}
+            conversationId={conversationId}
+            draftKey={draftKey}
+            parentId={rootId}
+            alsoInChannelLabel={alsoLabel}
+            placeholder={t("compose.placeholderThread")}
+            people={members.list}
+            groups={mentionGroups}
+            viewerRole={current?.role}
+            channels={channels.data ?? []}
+            broadcasts={!!channelId && gates.mentionAll}
+            myUserId={me.id}
+            baselineFor={outbox.baselineFor}
+            typing={typing}
+            editing={edit.editing}
+            onSaveEdit={edit.save}
+            onCancelEdit={edit.cancel}
+            onAttach={gates.attach ? () => navigation.navigate("attachSheet", { draftKey }) : undefined}
+            attachments={attachments}
+          />
+        ) : null}
+      </KeyboardArea>
+    </SafeAreaView>
+  );
+}
+
+const makeStyles = styleCache((shape) =>
+  StyleSheet.create({
+    fill: { flex: 1 },
+    end: { height: 12 },
+    readOnly: { paddingHorizontal: 16, paddingVertical: 14 },
+    count: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 10 },
+    rule: { flex: 1, height: shape.hairline },
+  }),
+);

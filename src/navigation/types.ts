@@ -1,0 +1,211 @@
+import type { ApiMessage, BlankKind, SpaceFile } from "../api/client/index.ts";
+import type { NavigatorScreenParams } from "@react-navigation/native";
+
+export type TabParams = {
+  today: undefined;
+  /** `open`: a conversation to show beside the list (a tablet, see `ConversationScreen`). */
+  discussions: { open?: RootParams["conversation"] } | undefined;
+  agenda: undefined;
+  files: undefined;
+};
+
+export type ViewerFile = { id: string; name: string; url: string; mime?: string; sizeBytes?: number };
+
+export type RootParams = {
+  tabs: NavigatorScreenParams<TabParams>;
+  /** "Search in Ruchoir": the space's messages and files. */
+  search: undefined;
+  /** The tutorial again, from Help. */
+  tutorial: { replay: true };
+  /** Create or join a space, from the space sheet. */
+  joinSpace: undefined;
+  /** My account's screens and sheets (mockup 11). */
+  statusSheet: undefined;
+  profile: undefined;
+  /** Every message I bookmarked, in every space. */
+  saved: undefined;
+  /** The account's notifications, from Today's bell. */
+  notifications: undefined;
+  /** The instance's settings and giving access back to an account, for an instance administrator. */
+  instanceAdmin: undefined;
+  preferences: undefined;
+  languageSheet: undefined;
+  security: undefined;
+  help: undefined;
+  /** A time zone chosen for the form under it, handed back under `key` (`account/choice.ts`). */
+  zonePicker: { key: string; current: string };
+  changePassword: undefined;
+  totp: { mode: "enable" | "disable" };
+  recoveryCodes: { codes: string[] };
+  /**
+   * A channel or a direct conversation; `channelId` is set for a channel (its agenda tab needs it).
+   * `unread` is how many messages were new when it was opened, which places the "New messages" line;
+   * `kind` tells a conversation with one person (where "Seen" shows) from a group.
+   */
+  conversation: {
+    conversationId: string;
+    title: string;
+    channelId?: string;
+    members?: number;
+    unread?: number;
+    kind?: "channel" | "person" | "group";
+    /** The others in a private conversation with several people, for the faces in its head. */
+    participants?: string[];
+    /** A message to take the reader to (a search result): a reply's root, and the reply. */
+    focus?: { id: string; replyId?: string };
+  };
+  folder: { folderId: string; name: string };
+  /** A file to show: a space file, a message's attachment or an event's, by its download URL. */
+  /** `entry` and `path` for a space file, whose menu the viewer offers. */
+  fileViewer: { file: ViewerFile; entry?: SpaceFile; path?: string };
+  /** An event opened; `start` is where the occurrence was shown (a date of a series is found near it). */
+  eventSummary: { eventId: string; recurrenceId?: string; start?: string };
+  /**
+   * The event form: a new event on `day` (linked to `channelId` when planned from a channel), or the
+   * event `eventId` changed (the date `recurrenceId` of a series).
+   */
+  eventForm: { day?: string; channelId?: string; eventId?: string; recurrenceId?: string; start?: string };
+  /** The event form's sheets, each on the form's draft (`formKey`, see `draftStore`). */
+  eventCalendar: { formKey: string };
+  /** A date or time of the form; `until` is the day a custom repetition stops. */
+  eventPicker: { formKey: string; field: "startDay" | "endDay" | "startTime" | "endTime" | "until" };
+  eventRepeat: { formKey: string };
+  eventInvitees: { formKey: string };
+  eventChannel: { formKey: string };
+  eventZone: { formKey: string };
+  /** The scope of a change to a date of a series, handed back to `key` (see `scope.ts`). */
+  eventScope: { key: string; title: string; action: "edit" | "delete" };
+  eventRule: { formKey: string };
+  /** The form's reminders (`formKey`), or one's own reminders for the event `eventId`, saved at once. */
+  eventReminders: { formKey: string; eventId?: undefined } | { eventId: string; formKey?: undefined };
+  /**
+   * A message's long-press sheet; `channelId` is set in a channel (pinning needs it), `draftKey` names
+   * the composer an edit goes to, and `inThread` hides "Reply in thread" where that is where one is.
+   */
+  messageActions: {
+    conversationId: string;
+    channelId?: string;
+    /** The conversation's name, for the head of a thread opened from here. */
+    title: string;
+    draftKey: string;
+    inThread?: boolean;
+    /** Opened from a list away from the composer (the pinned tab): no "Edit" there. */
+    fromList?: boolean;
+    message: ApiMessage;
+  };
+  /** "New message" and what it leads to: a conversation with people, a group, an invitation. */
+  newMessage: undefined;
+  newConversation: undefined;
+  newGroup: undefined;
+  invite: undefined;
+  /** A conversation's details: its topic, my notifications, its pinned messages, its people. */
+  conversationDetails: { conversationId: string; channelId?: string; title: string };
+  /** A channel's name, topic, access and archiving. */
+  channelEdit: { channelId: string };
+  /** Invite someone from outside into one channel, as a guest. */
+  channelInvite: { channelId: string; title: string };
+  /** A thread: its root message, in its conversation; `focusId` a reply to take the reader to. */
+  thread: { conversationId: string; channelId?: string; rootId: string; title: string; root?: ApiMessage; focusId?: string };
+  emojiPicker: { conversationId: string; message: ApiMessage };
+  /** "Add to the message", for the composer whose draft is `draftKey`. */
+  attachSheet: { draftKey: string; title?: string; spaceId?: string };
+  /** A space's files to pick from: `spaceId`'s, else the current space's. */
+  spaceFilePicker: { draftKey: string; spaceId?: string };
+  /** "Add a file" into a folder of a space (its root without `folderId`), named for the questions. */
+  filesAdd: { spaceId: string; folderId?: string; folderName: string };
+  /** The files on their way, and the question about a name already taken. */
+  uploads: undefined;
+  /** "Scan a document" into a folder of a space. */
+  scan: { spaceId: string; folderId?: string; folderName: string };
+  /** An entry's menu and what it opens; `path` is where the entry sits ("Clients / 2026"). */
+  fileMenu: { file: SpaceFile; spaceId: string; path?: string };
+  fileName: { mode: "create" | "rename" | "document"; spaceId: string; folderId?: string; fileId?: string; name?: string; kind?: BlankKind };
+  /** A document in the office editor; `convert` makes a legacy format into an editable copy first. */
+  officeEditor: { fileId: string; name?: string; convert?: boolean };
+  fileDetails: { file: SpaceFile; spaceId: string; path?: string };
+  fileMove: { file: SpaceFile; spaceId: string };
+  fileVersions: { file: SpaceFile; spaceId: string };
+  fileShare: { file: SpaceFile; spaceId: string };
+  fileSendTo: { file: SpaceFile; spaceId: string };
+  fileLinks: { file: SpaceFile };
+  uploadConflict: undefined;
+  spaceSheet: undefined;
+  /** The current space's settings: the list of sections the caller reaches. */
+  spaceSettings: undefined;
+  /** The sections, each a plain push from the list. */
+  spaceGeneral: undefined;
+  spaceMembers: undefined;
+  spaceRoles: undefined;
+  /** A role of the current space: its rights, its people, its name (the roles list opens it). */
+  roleEditor: { roleId: string };
+  /** A new role: its name and, optionally, the role it copies. */
+  roleCreate: undefined;
+  spaceGroups: undefined;
+  /** A group of the current space: its people, the roles it carries, its managers (the groups list opens it). */
+  groupEditor: { groupId: string };
+  /** The people of a group a message named (`@Comptabilité`), from a tap on its pill. */
+  groupPeople: { groupId: string };
+  /** A new group (name, description), which then opens its editor; with `groupId`, the name and description of that group. */
+  groupCreate: { groupId?: string } | undefined;
+  /**
+   * Who has access to a channel, a file or folder (`folder`), or a space calendar, at what level; `title`
+   * is its name as a person says it (a channel without the `#`). The level sheet, the adding screen,
+   * "Pourquoi ?" and "Personnaliser" open over it, each on the same `kind` and `resourceId`.
+   */
+  access: { kind: "channel" | "calendar" | "file"; resourceId: string; title: string; folder?: boolean; /** People just added from the add screen, for the private channel note. */ added?: { key: string; name: string }[] };
+  accessLevel: { kind: "channel" | "calendar" | "file"; resourceId: string; target: { kind: "everyone" | "role" | "group" | "user" | "audience"; id?: string }; title: string; folder?: boolean };
+  accessAdd: { kind: "channel" | "calendar" | "file"; resourceId: string; title: string; folder?: boolean };
+  why: { kind: "channel" | "calendar" | "file"; resourceId: string; userId: string; title: string; folder?: boolean };
+  customise: { kind: "channel" | "calendar" | "file"; resourceId: string; target: { kind: "everyone" | "role" | "group" | "user" | "audience"; id?: string } };
+  /** The space's calendars the caller manages, to open the access of one. */
+  calendarShare: undefined;
+  spaceAudit: undefined;
+  spaceLicence: undefined;
+  /** Installing a licence in the current space: pasted, or read from a file. */
+  licenceInstall: undefined;
+  /**
+   * A member of the current space: Profil and Gestion. `prolong` opens on the guest's end date;
+   * `spaceId` is the space the person belongs to when the caller selected it just before navigating
+   * (the screen waits for it to be the current one).
+   */
+  spaceMember: { userId: string; prolong?: true; spaceId?: string };
+  /** The current space's deletion, its name to type (owner). */
+  spaceDelete: undefined;
+  /** How much the current space notifies me. */
+  spaceNotify: undefined;
+  /** The current space's default channel (owner and admins). */
+  spaceDefaultChannel: undefined;
+  spaceChannelOrder: undefined;
+  accountSheet: undefined;
+  /** "Don't miss anything important" (mockup 08), once after signing in. */
+  notificationsIntro: undefined;
+};
+
+declare global {
+  namespace ReactNavigation {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    interface RootParamList extends RootParams {}
+  }
+}
+
+/** An invitation read from a pasted link and previewed: where it leads, and who sent it. */
+export type InvitationChoice = {
+  token: string;
+  spaceName: string;
+  invitedBy?: string;
+  /** The address it was sent to, when it names one. */
+  email?: string;
+  /** Another instance than the one on screen, which it belongs to (ADR 0007). */
+  origin?: string;
+};
+
+/** The screens before signing in (`AuthNavigator`). */
+export type AuthParams = {
+  welcome: undefined;
+  tutorial: { replay?: boolean } | undefined;
+  signIn: undefined;
+  signUp: { invitation?: InvitationChoice } | undefined;
+  invitationLink: undefined;
+  verifyEmail: undefined;
+  forgotPassword: { email?: string } | undefined;
+};

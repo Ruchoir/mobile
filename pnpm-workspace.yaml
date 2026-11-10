@@ -1,0 +1,41 @@
+# One package, the app. The @ruchoir packages are published by Ruchoir/core and pinned exactly.
+minimumReleaseAgeExclude:
+  - '@ruchoir/design-system@0.6.0'
+  - '@ruchoir/native-client@0.6.0'
+  - '@ruchoir/permissions-logic@0.6.0'
+allowBuilds:
+  unrs-resolver: true
+overrides:
+  "brace-expansion@>=5.0.0 <5.0.12": "5.0.12"
+  "@xmldom/xmldom@<0.8.15": "0.8.15"
+  "node-forge@<1.4.1": "1.4.1"
+# GHSA-vfj7-8cjw-p6xm (braces <= 3.0.3, stack exhaustion on deeply nested brace patterns): dev only,
+# at lint time on the repository's own glob patterns, never on input from a user, and nothing of it
+# (16.4.3) still pins fast-glob 3.3.1. Drop this once either moves.
+#
+# node-forge 1.4.1 (2026-10-27) fixes GHSA-86w9-cpqp-85rv and the ten advisories published with it;
+# it is held at that version above, through the Expo CLI's code-signing certificates.
+#
+# GHSA-w5hq-g745-h8pq (uuid < 11.1.1, missing bounds check with a caller-provided buffer): dev only,
+# through the Expo CLI of apps/mobile (uuid 7 through xcode in @expo/config-plugins, which the CLI
+# runs to generate native projects). It runs on a developer's machine and never reaches the app's
+#
+# GHSA-g3hv-75wg-m249 (minimatch < 11.0.1) and GHSA-3g3m-2fjr-6pw4 (glob 9 to 14.0.1), denial of
+# service on crafted patterns: dev only, the same way, through the Expo CLI's configuration reader
+# and ESLint, which match the repository's own patterns. Both are fixed on a newer major line only
+# (minimatch 11, glob 14), which the tools that pull them do not accept. Drop these once they move.
+#
+# GHSA-mrhx-c7xc-m3w5 (zod < 4.6.6, memory exhaustion validating oversized input) and
+# GHSA-gcqx-w48m-w2h4 (deepmerge 4.2 to 4.3.1, prototype poisoning in mergeObject): dev only, the
+# same way, through the Expo CLI (zod 3.25 in @expo/cli, deepmerge in @expo/config), which validates
+# and merges the project's own configuration on a developer's machine. zod is fixed in 4.6.6 only,
+# with nothing on the 3 line the CLI is written against, and deepmerge has no fixed release. Drop
+# these once the Expo CLI moves past them.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
+    - GHSA-w5hq-g745-h8pq
+    - GHSA-mrhx-c7xc-m3w5
+    - GHSA-gcqx-w48m-w2h4
+    - GHSA-g3hv-75wg-m249
+    - GHSA-3g3m-2fjr-6pw4
