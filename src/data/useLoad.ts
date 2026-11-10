@@ -7,7 +7,7 @@
  * space), a new key of the same space (another view, another period) keeps the last result on
  * screen while it loads, rather than blinking through the loading state (`loadState.ts`).
  */
-import { isApiError } from "../api/client/index.ts";
+import { isApiError } from "../products/index.ts";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useResync } from "../realtime/RealtimeProvider";

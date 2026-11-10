@@ -5,7 +5,7 @@
  * taps are an add then a removal, and the server must see them in that order to end where the screen
  * does. A refusal puts the message back as it was before the tap and says so.
  */
-import type { ApiMessage, RuchoirClient } from "../api/client/index.ts";
+import type { ApiMessage, RuchoirClient } from "../products/index.ts";
 import { useCallback } from "react";
 
 import { useApi } from "../api/useApi";

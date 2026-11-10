@@ -4,7 +4,7 @@
  * one per person, three at most) and the time; a reply taken back only lowers the count, since it
  * says nothing of whether its author has others there, and the next read settles it.
  */
-import type { Message } from "../api/client/index.ts";
+import type { Message } from "../products/index.ts";
 
 const MAX_FACES = 3;
 

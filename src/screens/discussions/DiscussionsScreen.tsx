@@ -1,4 +1,4 @@
-import type { Member, RuchoirClient } from "../../api/client/index.ts";
+import type { Member, RuchoirClient } from "../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { Lock, MessageCircle, MessageSquare, SearchX, SquarePen, Star, Users } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";

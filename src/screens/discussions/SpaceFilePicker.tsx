@@ -3,7 +3,7 @@
  * space, the recent files, and the folders to walk through. The file is attached as itself, nothing
  * is uploaded again.
  */
-import type { SpaceFile } from "../../api/client/index.ts";
+import type { SpaceFile } from "../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { ChevronLeft, FolderOpen, SearchX } from "lucide-react-native";
 import { useEffect, useState } from "react";

@@ -4,8 +4,8 @@
  * of a guest's end and of an ended access. The sentences are dictionary keys the screens translate;
  * the rights themselves come from `@ruchoir/client/permissionsLogic`, shared with the web.
  */
-import { keepLabel, ROLE_COLOURS, rolesViaGroups, type RoleChoice, type RoleColourKey } from "../api/client/permissionsLogic/index.ts";
-import type { EndedAccess } from "../api/client/index.ts";
+import { keepLabel, ROLE_COLOURS, rolesViaGroups, type RoleChoice, type RoleColourKey } from "./shared/permissionsLogic/index.ts";
+import type { EndedAccess } from "../products/index.ts";
 
 /** Parts of a date are read in a fixed numeric format and never shown: any locale that writes digits the same way will do. */
 const PARTS_LOCALE = "en-CA";

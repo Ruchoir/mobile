@@ -1,4 +1,4 @@
-import { blockedMoveTargets, isTaken } from "../../api/client/filesLogic/index.ts";
+import { blockedMoveTargets, isTaken } from "../../logic/shared/filesLogic/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { ChevronLeft, ChevronRight, Folder } from "lucide-react-native";
 import { useState } from "react";

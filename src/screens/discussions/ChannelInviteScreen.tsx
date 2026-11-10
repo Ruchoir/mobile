@@ -3,7 +3,7 @@
  * as a guest who sees this channel and nothing else of the space. For whoever runs the channel (its
  * owner, a moderator, the space's administrators), which the API checks.
  */
-import { isApiError } from "../../api/client/index.ts";
+import { isApiError } from "../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { useState } from "react";
 import { Share, StyleSheet, View } from "react-native";

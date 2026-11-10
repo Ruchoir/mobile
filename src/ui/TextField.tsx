@@ -1,4 +1,4 @@
-import { charCount } from "../api/client/permissionsLogic/index.ts";
+import { charCount } from "../logic/shared/permissionsLogic/index.ts";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useState, type Ref } from "react";
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from "react-native";

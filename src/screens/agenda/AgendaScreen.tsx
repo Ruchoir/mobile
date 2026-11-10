@@ -1,4 +1,4 @@
-import type { Calendar, Occurrence } from "../../api/client/index.ts";
+import type { Calendar, Occurrence } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CalendarPlus } from "lucide-react-native";
@@ -21,7 +21,6 @@ import { Segmented } from "../../ui/Segmented";
 import { LoadState } from "../../ui/States";
 import { TabHeader } from "../../ui/TabHeader";
 import { TabScreen } from "../../ui/TabScreen";
-import { CalendarShareButton } from "./CalendarShareButton";
 import { ListView } from "./ListView";
 import { MonthView } from "./MonthView";
 import { AgendaWide } from "./AgendaWide";
@@ -99,7 +98,7 @@ export function AgendaScreen() {
 
   return (
     <TabScreen>
-      <TabHeader title={t("tabs.agenda")} action={<CalendarShareButton canShare={data.data?.canShare} />} />
+      <TabHeader title={t("tabs.agenda")} />
       <ScrollView contentContainerStyle={styles.page} onScroll={floating.onScroll} scrollEventThrottle={floating.scrollEventThrottle}>
         <Segmented
           options={options}

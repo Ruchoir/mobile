@@ -1,9 +1,3 @@
-import { AccessLevelSheet } from "../screens/access/AccessLevelSheet";
-import { AccessScreen } from "../screens/access/AccessScreen";
-import { AddTargetScreen } from "../screens/access/AddTargetScreen";
-import { CalendarsSheet } from "../screens/access/CalendarsSheet";
-import { CustomiseScreen } from "../screens/access/CustomiseScreen";
-import { WhySheet } from "../screens/access/WhySheet";
 import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -12,14 +6,9 @@ import { SearchScreen } from "../screens/search/SearchScreen";
 import { useDuplicateQuestions } from "../uploads/useDuplicateQuestions";
 import { useWidgetLook, useWidgetRefresh } from "../widgets/share";
 import { AccountSheet } from "../screens/account/AccountSheet";
-import { ChangePasswordScreen } from "../screens/account/ChangePasswordScreen";
 import { HelpSheet } from "../screens/account/HelpSheet";
 import { LanguageSheet, PreferencesScreen } from "../screens/account/PreferencesScreen";
-import { ProfileScreen } from "../screens/account/ProfileScreen";
-import { RecoveryCodesScreen } from "../screens/account/RecoveryCodesScreen";
-import { SecurityScreen } from "../screens/account/SecurityScreen";
 import { StatusSheet } from "../screens/account/StatusSheet";
-import { TotpScreen } from "../screens/account/TotpScreen";
 import { ZonePicker } from "../screens/account/ZonePicker";
 import { ConversationDetails } from "../screens/discussions/ConversationDetails";
 import { ConversationScreen } from "../screens/discussions/ConversationScreen";
@@ -28,7 +17,6 @@ import { ChannelEditScreen } from "../screens/discussions/ChannelEditScreen";
 import { ChannelInviteScreen } from "../screens/discussions/ChannelInviteScreen";
 import { SavedScreen } from "../screens/discussions/SavedScreen";
 import { NotificationsScreen } from "../screens/today/NotificationsScreen";
-import { InstanceAdminScreen } from "../screens/account/InstanceAdminScreen";
 import { InviteScreen } from "../screens/discussions/InviteScreen";
 import { MessageActionSheet } from "../screens/discussions/MessageActionSheet";
 import { NewConversationScreen } from "../screens/discussions/NewConversationScreen";
@@ -62,24 +50,10 @@ import { ScanScreen } from "../screens/files/ScanScreen";
 import { ShareSheet } from "../screens/files/ShareSheet";
 import { UploadsSheet } from "../screens/files/UploadsSheet";
 import { VersionsSheet } from "../screens/files/VersionsSheet";
-import { JoinSpaceScreen } from "../screens/space/JoinSpaceScreen";
 import { DefaultChannelSheet } from "../screens/space/DefaultChannelSheet";
 import { ChannelOrderSheet } from "../screens/space/ChannelOrderSheet";
-import { DeleteSpaceScreen } from "../screens/space/DeleteSpaceScreen";
-import { MemberScreen } from "../screens/space/MemberScreen";
 import { SpaceNotifySheet } from "../screens/space/SpaceNotifySheet";
-import { SpaceGeneralScreen } from "../screens/space/SpaceGeneralScreen";
-import { SpaceMembersScreen } from "../screens/space/SpaceMembersScreen";
-import { SpaceAuditScreen } from "../screens/space/SpaceAuditScreen";
-import { LicenceInstallScreen } from "../screens/space/LicenceInstallScreen";
-import { SpaceLicenceScreen } from "../screens/space/SpaceLicenceScreen";
-import { SpaceGroupsScreen } from "../screens/space/SpaceGroupsScreen";
-import { GroupEditorScreen } from "../screens/space/GroupEditorScreen";
 import { GroupPeopleSheet } from "../screens/discussions/GroupPeopleSheet";
-import { GroupFormScreen } from "../screens/space/GroupFormScreen";
-import { RoleCreateScreen } from "../screens/space/RoleCreateScreen";
-import { RoleEditorScreen } from "../screens/space/RoleEditorScreen";
-import { SpaceRolesScreen } from "../screens/space/SpaceRolesScreen";
 import { SpaceSettingsScreen } from "../screens/space/SpaceSettingsScreen";
 import { SpaceSheet } from "../screens/space/SpaceSheet";
 import { NotificationsIntroScreen } from "../screens/account/NotificationsIntroScreen";
@@ -95,11 +69,6 @@ const Stack = createNativeStackNavigator<RootParams>();
 
 /** The root navigation, for what opens a screen from outside one (a tapped notification). */
 const rootNavigation = createNavigationContainerRef<RootParams>();
-
-/** "Create or join a space", from the space sheet. */
-function JoinSpaceModal() {
-  return <JoinSpaceScreen />;
-}
 
 /** The signed-in app: the tabs, the screens pushed over them, and the sheets. */
 export function RootNavigator({ instanceId }: { instanceId: string }) {
@@ -155,46 +124,20 @@ export function RootNavigator({ instanceId }: { instanceId: string }) {
         {/* As tall as its rows, like the other short sheets: at half the screen and then full, it
             jumped and blinked as it opened and closed. */}
         <Stack.Screen name="spaceSheet" component={SpaceSheet} options={sheet} />
-        <Stack.Screen name="joinSpace" component={JoinSpaceModal} options={{ presentation: "modal" }} />
         <Stack.Screen name="spaceSettings" component={SpaceSettingsScreen} />
-        <Stack.Screen name="spaceGeneral" component={SpaceGeneralScreen} />
-        <Stack.Screen name="spaceMembers" component={SpaceMembersScreen} />
-        <Stack.Screen name="spaceRoles" component={SpaceRolesScreen} />
-        <Stack.Screen name="roleEditor" component={RoleEditorScreen} />
-        <Stack.Screen name="roleCreate" component={RoleCreateScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="spaceGroups" component={SpaceGroupsScreen} />
-        <Stack.Screen name="groupEditor" component={GroupEditorScreen} />
         <Stack.Screen name="groupPeople" component={GroupPeopleSheet} options={{ ...sheet, sheetAllowedDetents: [0.6, 1] }} />
-        <Stack.Screen name="groupCreate" component={GroupFormScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="access" component={AccessScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="accessLevel" component={AccessLevelSheet} options={{ ...sheet, sheetAllowedDetents: [0.6, 1] }} />
-        <Stack.Screen name="accessAdd" component={AddTargetScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="why" component={WhySheet} options={{ ...sheet, sheetAllowedDetents: [0.75, 1] }} />
-        <Stack.Screen name="customise" component={CustomiseScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="calendarShare" component={CalendarsSheet} options={{ ...sheet, sheetAllowedDetents: [0.5, 1] }} />
-        <Stack.Screen name="spaceAudit" component={SpaceAuditScreen} />
-        <Stack.Screen name="spaceLicence" component={SpaceLicenceScreen} />
-        <Stack.Screen name="licenceInstall" component={LicenceInstallScreen} />
         <Stack.Screen name="notificationsIntro" component={NotificationsIntroScreen} options={{ presentation: "fullScreenModal" }} />
-        <Stack.Screen name="spaceMember" component={MemberScreen} />
-        <Stack.Screen name="spaceDelete" component={DeleteSpaceScreen} options={{ presentation: "modal" }} />
         <Stack.Screen name="spaceNotify" component={SpaceNotifySheet} options={sheet} />
         <Stack.Screen name="spaceChannelOrder" component={ChannelOrderSheet} options={{ ...sheet, sheetAllowedDetents: [0.6, 1] }} />
         <Stack.Screen name="spaceDefaultChannel" component={DefaultChannelSheet} options={{ ...sheet, sheetAllowedDetents: [0.6, 1] }} />
         <Stack.Screen name="tutorial" component={TutorialScreen} options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen name="accountSheet" component={AccountSheet} options={sheet} />
         <Stack.Screen name="statusSheet" component={StatusSheet} options={sheet} />
-        <Stack.Screen name="profile" component={ProfileScreen} options={{ presentation: "modal" }} />
         <Stack.Screen name="saved" component={SavedScreen} options={{ presentation: "modal" }} />
         <Stack.Screen name="notifications" component={NotificationsScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="instanceAdmin" component={InstanceAdminScreen} options={{ presentation: "modal" }} />
         <Stack.Screen name="zonePicker" component={ZonePicker} options={{ ...sheet, sheetAllowedDetents: [0.75, 1] }} />
         <Stack.Screen name="preferences" component={PreferencesScreen} />
         <Stack.Screen name="languageSheet" component={LanguageSheet} options={sheet} />
-        <Stack.Screen name="security" component={SecurityScreen} />
-        <Stack.Screen name="changePassword" component={ChangePasswordScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="totp" component={TotpScreen} options={{ presentation: "modal" }} />
-        <Stack.Screen name="recoveryCodes" component={RecoveryCodesScreen} options={{ presentation: "modal", gestureEnabled: false }} />
         <Stack.Screen name="help" component={HelpSheet} options={sheet} />
         <Stack.Screen name="messageActions" component={MessageActionSheet} options={sheet} />
         <Stack.Screen name="emojiPicker" component={EmojiPickerSheet} options={{ ...sheet, sheetAllowedDetents: [0.7, 1] }} />

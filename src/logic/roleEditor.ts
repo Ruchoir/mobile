@@ -14,7 +14,7 @@ import {
   viewAsState,
   type Edition,
   type UsedInRow,
-} from "../api/client/permissionsLogic/index.ts";
+} from "./shared/permissionsLogic/index.ts";
 
 type RoleLike = {
   id: string;

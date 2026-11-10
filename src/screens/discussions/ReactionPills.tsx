@@ -1,4 +1,4 @@
-import type { Reaction } from "../../api/client/index.ts";
+import type { Reaction } from "../../products/index.ts";
 import { SmilePlus } from "lucide-react-native";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 

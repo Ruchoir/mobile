@@ -1,23 +1,25 @@
 /**
  * The instances this phone is signed in to, and the one on screen (ADR 0007).
  *
- * Each instance has its own client (`createClient`), holding its address and, through `tokens`, its
- * session token: two instances never share one, and a request started on one finishes there. The
- * accounts boot from the Keychain (`store.ts`), check each session with its instance, and keep a
- * status per instance: signed in (with the account), signed out (its session ended), or offline (not
- * checked yet). The sign-in flow runs when there is nothing signed in, or when the person adds an
+ * Each instance has its own client (`products/client.ts`), which reaches its products with the
+ * access tokens of its grant: two instances never share one, and a request started on one finishes
+ * there. The accounts boot from the Keychain (`store.ts`), find each instance's grant with the
+ * native client, and keep a status per instance: signed in (with the person), signed out (its grant
+ * ended), or offline (its discovery could not be refreshed and it was never found). The sign-in flow runs when there is nothing signed in, or when the person adds an
  * instance or renews one.
  *
  * What every instance shows outside its own screens (its spaces with their unread counts, its unread
  * notifications) is published here by its scope (`InstanceScope`) as a summary, which the space sheet,
  * the bell and the badges read.
  */
-import { isApiError, type RuchoirClient, type SessionUser, type Workspace } from "../api/client/index.ts";
+import { discoverInstance, type Instance } from "@ruchoir/native-client";
+
+import { expoPlatform, native } from "../products/auth.ts";
+import { sessionUser, type RuchoirClient, type SessionUser, type Workspace } from "../products/index.ts";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
 
 import { clearDownloads } from "../files/cache";
-import { holdPrefsFlush } from "../prefs/store";
 import { notifications } from "../push/native";
 import { forgetPhoneOn, refreshPhonePush, shareSessions } from "../push/phone";
 import { refreshWidgets } from "../widgets";
@@ -25,7 +27,7 @@ import { InstanceClients } from "./clients";
 import { invitationRoute } from "./invitation";
 import { unreadEverywhere } from "./summary";
 import { addInstance, findByOrigin, removeInstance, setActive, setLastSpace, type InstanceEntry, type Registry } from "./registry";
-import { loadRegistry, newInstanceId, saveRegistry, tokens } from "./store";
+import { loadRegistry, newInstanceId, saveRegistry } from "./store";
 
 export type InstanceStatus =
   | { kind: "checking" }
@@ -59,9 +61,9 @@ type AccountsApi = {
   startAdd: () => void;
   renew: (id: string) => void;
   cancelFlow: () => void;
-  isSignedIn: (origin: string) => boolean;
+  isSignedIn: (domain: string) => boolean;
   /** A session obtained by the flow: the instance is added (or renewed) and shown. */
-  completeSignIn: (done: { origin: string; token: string; user: SessionUser; invitation: string | null }) => Promise<void>;
+  completeSignIn: (done: { instance: Instance; user: SessionUser; invitation: string | null }) => Promise<void>;
   /** The invitation pasted at sign-up on this instance, handed once. */
   takeInvitation: (id: string) => string | null;
   /**
@@ -76,11 +78,9 @@ type AccountsApi = {
   /** Forget an instance altogether (signing out of it first). */
   remove: (id: string) => Promise<void>;
   updateUser: (id: string, patch: Partial<SessionUser>) => void;
-  /** Replace an instance's token (a new password signs every session out, then in again). */
-  holdToken: (id: string, token: string | null) => Promise<void>;
   /** Check again the instances that could not be reached. */
   retryOffline: () => void;
-  /** Whether an instance's space on screen is a preview: its client then writes nothing on its own. */
+  /** Kept for the space provider: no product serves a preview as a role, so nothing is held. */
   setPreviewing: (id: string, on: boolean, spaceId?: string) => void;
   /** Hear of each write refused by a preview on an instance. Returns the way to stop. */
   onPreviewReadOnly: (id: string, handler: (request: { method: string; path: string }) => void) => () => void;
@@ -114,23 +114,17 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
 
   const clientOf = useCallback((entry: InstanceEntry): RuchoirClient => live.client(entry), [live]);
 
-  /** Ask an instance who is signed in with the token the phone holds for it. */
+  /** Ask the native client whether a grant is held for the instance, and refresh its discovery. */
   const check = useCallback(
     async (entry: InstanceEntry) => {
-      const token = live.token(entry.id);
-      if (!token) return setStatus(entry.id, { kind: "signedOut" });
-      try {
-        setStatus(entry.id, { kind: "signedIn", user: await clientOf(entry).getSession() });
-      } catch (err) {
-        if (isApiError(err, 401)) {
-          // A token the instance no longer honours is forgotten, not kept for the next launch.
-          live.hold(entry.id, null);
-          void tokens.clear(entry.id).catch(() => {});
-          setStatus(entry.id, { kind: "signedOut" });
-        } else setStatus(entry.id, { kind: "offline" });
-      }
+      const account = await native.account(entry.instance.issuer).catch(() => null);
+      setStatus(entry.id, account ? { kind: "signedIn", user: sessionUser(account) } : { kind: "signedOut" });
+      // A product installed or removed since is seen at the next launch.
+      void discoverInstance(expoPlatform.fetch, entry.origin)
+        .then((instance) => update((r) => ({ ...r, instances: r.instances.map((e) => (e.id === entry.id ? { ...e, instance } : e)) })))
+        .catch(() => {});
     },
-    [clientOf, live, setStatus],
+    [setStatus, update],
   );
 
   useEffect(() => {
@@ -138,7 +132,6 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const loaded = await loadRegistry().catch(() => null);
       const start = loaded ?? { instances: [], active: null, lastSpace: {} };
-      await Promise.all(start.instances.map(async (entry) => live.hold(entry.id, await tokens.get(entry.id).catch(() => null))));
       if (!mounted) return;
       registryRef.current = start;
       setRegistry(start);
@@ -149,22 +142,13 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
     };
   }, [check, live]);
 
-  const forget = useCallback(async (id: string) => {
-    live.hold(id, null);
-    await tokens.clear(id).catch(() => {});
-  }, [live]);
-
-  // A 401 on an instance ends its session there, except a wrong password typed to confirm an action
-  // (changing the password, turning off two-factor).
   useEffect(() => {
-    live.onUnauthorized((id, code) => {
-      if (!live.token(id) || code === "invalid_credentials") return;
+    live.onSignedOut((id) => {
       const entry = registryRef.current?.instances.find((e) => e.id === id);
-      void forget(id);
       if (entry) clearDownloads(entry.origin);
       setStatus(id, { kind: "signedOut", reason: "expired" });
     });
-  }, [live, forget, setStatus]);
+  }, [live, setStatus]);
 
   const accounts = useMemo<Account[]>(
     () =>
@@ -196,16 +180,14 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
   const heldKey = held.map((a) => a.id).join(" ");
   useEffect(() => {
     if (!registry || checking) return;
-    const shared = held.flatMap((a) => {
-      const token = live.token(a.id);
-      return token ? [{ server: a.origin, token }] : [];
-    });
+    const shared = held.map((a) => ({ instance: a.instance }));
     void shareSessions(shared)
       .then(refreshWidgets)
       .catch(() => {});
     // Only the set of instances holding a session matters here, not their accounts' details.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heldKey, checking, registry !== null]);
+
 
   // The app's icon carries the unread notifications of every signed-in instance, as the bell does;
   // the extensions keep it current while the app is closed (`push/background.ts`, `targets/`).
@@ -238,8 +220,8 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
   );
 
   const isSignedIn = useCallback(
-    (origin: string) => {
-      const entry = registryRef.current ? findByOrigin(registryRef.current, origin) : undefined;
+    (domain: string) => {
+      const entry = registryRef.current ? findByOrigin(registryRef.current, domain) : undefined;
       if (!entry) return false;
       // Renewing that very instance is not adding it twice.
       if (flow?.kind === "renew" && flow.id === entry.id) return false;
@@ -249,22 +231,20 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
   );
 
   const completeSignIn = useCallback(
-    async ({ origin, token, user, invitation }: { origin: string; token: string; user: SessionUser; invitation: string | null }) => {
+    async ({ instance, user, invitation }: { instance: Instance; user: SessionUser; invitation: string | null }) => {
       const current = registryRef.current;
       if (!current) return;
-      const entry = findByOrigin(current, origin) ?? { id: newInstanceId(), origin };
-      await tokens.set(entry.id, token);
-      live.hold(entry.id, token);
+      const known = findByOrigin(current, instance.domain);
+      const entry = { id: known?.id ?? newInstanceId(), origin: instance.domain, instance };
       if (invitation) invitations.current.set(entry.id, invitation);
-      clientOf(entry);
-      const next = addInstance(current, entry);
+      const next = addInstance({ ...current, instances: current.instances.map((e) => (e.id === entry.id ? entry : e)) }, entry);
       registryRef.current = next;
       setRegistry(next);
       await saveRegistry(next).catch(() => {});
       setStatus(entry.id, { kind: "signedIn", user });
       setFlow(null);
     },
-    [clientOf, live, setStatus],
+    [setStatus],
   );
 
   const takeInvitation = useCallback((id: string) => {
@@ -290,25 +270,13 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       const entry = registryRef.current?.instances.find((e) => e.id === id);
       if (!entry) return;
       const client = clientOf(entry);
-      // A session looking at a role refuses the unregistering below: the preview is quit first.
-      const previewed = live.previewSpace(id);
-      if (previewed) {
-        await client.quitPreview(previewed).catch(() => {});
-        live.setPreviewing(id, false);
-        holdPrefsFlush(live.anyPreviewing());
-      }
-      // While the session still opens the door: the instance forgets this phone (ADR 0006).
       await forgetPhoneOn(client);
-      try {
-        await client.logout();
-      } catch {
-        // Signing out works offline too: the token is forgotten here whatever the server heard.
-      }
-      await forget(id);
+      // Propolis revokes the refresh token: every product's access token ends with it.
+      await client.logout().catch(() => {});
       clearDownloads(entry.origin);
       setStatus(id, { kind: "signedOut", reason });
     },
-    [clientOf, forget, live, setStatus],
+    [clientOf, setStatus],
   );
 
   const signOutEverywhere = useCallback(
@@ -321,12 +289,12 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
 
   const remove = useCallback(
     async (id: string) => {
-      if (live.token(id)) await signOutOf(id);
+      if (statuses[id]?.kind === "signedIn") await signOutOf(id);
       live.drop(id);
       setSummaries(({ [id]: _gone, ...rest }) => rest);
       update((r) => removeInstance(r, id));
     },
-    [live, signOutOf, update],
+    [live, signOutOf, statuses, update],
   );
 
   const updateUser = useCallback((id: string, patch: Partial<SessionUser>) => {
@@ -336,21 +304,8 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const holdToken = useCallback(async (id: string, token: string | null) => {
-    live.hold(id, token);
-    if (token) await tokens.set(id, token);
-    else await tokens.clear(id);
-  }, [live]);
-
-  const setPreviewing = useCallback(
-    (id: string, on: boolean, spaceId?: string) => {
-      live.setPreviewing(id, on, spaceId);
-      // What the account sends as a whole (its preferences) waits while any instance previews.
-      holdPrefsFlush(live.anyPreviewing());
-    },
-    [live],
-  );
-  const onPreviewReadOnly = useCallback((id: string, handler: (request: { method: string; path: string }) => void) => live.onPreviewReadOnly(id, handler), [live]);
+  const setPreviewing = useCallback((_id: string, _on: boolean, _spaceId?: string) => {}, []);
+  const onPreviewReadOnly = useCallback((_id: string, _handler: (request: { method: string; path: string }) => void) => () => {}, []);
 
   const startAdd = useCallback(() => setFlow({ kind: "add" }), []);
   const renew = useCallback((id: string) => setFlow({ kind: "renew", id }), []);
@@ -378,7 +333,6 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       signOutEverywhere,
       remove,
       updateUser,
-      holdToken,
       retryOffline,
       setPreviewing,
       onPreviewReadOnly,
@@ -404,7 +358,6 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       signOutEverywhere,
       remove,
       updateUser,
-      holdToken,
       retryOffline,
       setPreviewing,
       onPreviewReadOnly,

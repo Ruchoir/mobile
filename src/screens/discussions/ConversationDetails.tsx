@@ -11,10 +11,10 @@
  * as its owner, which is how the API reads them. The ranks only decide what is offered; the API is
  * the guard and a refusal is said.
  */
-import type { ConversationNotify, Member, NotifyLevel } from "../../api/client/index.ts";
+import type { ConversationNotify, Member, NotifyLevel } from "../../products/index.ts";
 import { StackActions, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Check, LogOut, Mail, Pencil, Star, Trash2, UserPlus, Users } from "lucide-react-native";
+import { Check, LogOut, Mail, Pencil, Star, Trash2, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -294,15 +294,6 @@ export function ConversationDetails() {
               />
               {mayEdit ? (
                 <ActionRow icon={Pencil} title={t("details.edit")} subtitle={t("details.editHint")} onPress={() => navigation.navigate("channelEdit", { channelId: channelId! })} />
-              ) : null}
-              {mayShare && levels ? (
-                <ActionRow
-                  icon={Users}
-                  tint={c.mint}
-                  title={t("access.tab")}
-                  subtitle={t("access.rowHint")}
-                  onPress={() => navigation.navigate("access", { kind: "channel", resourceId: channelId!, title })}
-                />
               ) : null}
               {runs && !archived && channel?.type === "private" ? (
                 <ActionRow icon={UserPlus} tint={c.pink} title={t("details.addPeople")} subtitle={t("details.addPeopleHint")} onPress={() => setAdding(true)} />

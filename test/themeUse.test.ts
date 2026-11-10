@@ -10,7 +10,7 @@ const SRC = new URL("../src/", import.meta.url).pathname.replace(/^\/([A-Za-z]:)
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = `${dir}/${name}`;
-    if (statSync(path).isDirectory()) return path.endsWith("/theme") || path.endsWith("/api/client") ? [] : files(path);
+    if (statSync(path).isDirectory()) return path.endsWith("/theme") || path.endsWith("/logic/shared") || path.endsWith("/products/shared") ? [] : files(path);
     return /\.tsx?$/.test(name) ? [path] : [];
   });
 }

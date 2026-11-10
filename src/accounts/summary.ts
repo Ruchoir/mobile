@@ -2,7 +2,7 @@
  * What the space sheet and the badges draw from every instance's summary (ADR 0007). Free of React
  * so Node tests it.
  */
-import type { Workspace } from "../api/client/index.ts";
+import type { Workspace } from "../products/index.ts";
 
 export type SectionState = "signedIn" | "signedOut" | "offline" | "checking";
 

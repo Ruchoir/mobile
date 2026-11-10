@@ -1,6 +1,6 @@
-import type { Member } from "../api/client/index.ts";
+import type { Member } from "../products/index.ts";
 import { useMemo } from "react";
-import { broadcastMentionNames } from "../api/client/permissionsLogic/index.ts";
+import { broadcastMentionNames } from "../logic/shared/permissionsLogic/index.ts";
 
 import { useApi } from "../api/useApi";
 import { useLoad } from "./useLoad";

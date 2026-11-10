@@ -3,8 +3,8 @@
 The mobile app for iOS and Android: one Expo app for every product, built on the packages of `core`
 and the Propolis SDK.
 
-> In construction: part of the restructuring of Ruchoir into separate products. The app moved here
-> from the monolith with its history and still speaks its API.
+> In construction: part of the restructuring of Ruchoir into separate products. The app signs in with
+> Propolis and reaches each product of an instance through its own API.
 
 - How to work here: [`AGENTS.md`](AGENTS.md), which opens with the common rules of the organization.
 - How to contribute: [Ruchoir/.github, `CONTRIBUTING.md`](https://github.com/Ruchoir/.github/blob/main/CONTRIBUTING.md).

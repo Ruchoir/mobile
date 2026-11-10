@@ -1,4 +1,4 @@
-import { actionsFor, canManage, type ActionId } from "../../api/client/filesLogic/index.ts";
+import { actionsFor, canManage, type ActionId } from "../../logic/shared/filesLogic/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Sharing from "expo-sharing";
@@ -85,10 +85,7 @@ export function EntryMenu() {
     },
     rename: () =>
       navigation.replace("fileName", { mode: "rename", spaceId: params.spaceId, folderId: file.parentFolderId, fileId: file.id, name: file.name }),
-    share: () =>
-      file.kind === "folder"
-        ? navigation.replace("access", { kind: "file", resourceId: file.id!, title: file.name, folder: true })
-        : navigation.replace("fileShare", { file, spaceId: params.spaceId }),
+    share: () => navigation.replace("fileShare", { file, spaceId: params.spaceId }),
     move: () => navigation.replace("fileMove", { file, spaceId: params.spaceId }),
     newVersion: () =>
       void pickDocuments(false).then(async (picked) => {

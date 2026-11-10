@@ -1,30 +1,30 @@
 /**
- * Where the app stands with its instance, as a plain reducer so it can be tested without a phone.
+ * Where the app stands with the instance being signed in to, as a plain reducer so it can be tested
+ * without a phone.
  *
  * - `booting`: reading the Keychain.
  * - `needsServer`: no instance chosen yet (or the person asked to change it).
- * - `signedOut`: an instance, no session; `reason: "expired"` when a 401 ended one, `"signIn"` when
- *   the person left the second factor for the password, `"locked"` when the app lock signed out (a
- *   forgotten PIN, too many wrong ones): all open the sign-in, not the welcome.
- * - `mfa`: the password passed, a second factor is asked for.
- * - `signedIn`: a session, and the account it belongs to.
+ * - `signedOut`: an instance found, no grant; `reason: "expired"` when Propolis ended one,
+ *   `"locked"` when the app lock signed out (a forgotten PIN, too many wrong ones).
+ * - `signedIn`: a grant, and the person it belongs to.
+ *
+ * The password, the second factor and the passkeys are Propolis's pages, in the authentication
+ * browser: the app never sees them.
  */
-import type { MfaMethod, SessionUser } from "../api/client/index.ts";
+import type { SessionUser } from "../products/index.ts";
 
 export type SessionState =
   | { kind: "booting" }
   | { kind: "needsServer" }
-  | { kind: "signedOut"; server: string; reason?: "expired" | "signIn" | "locked" }
-  | { kind: "mfa"; server: string; mfaToken: string; methods: MfaMethod[] }
+  | { kind: "signedOut"; server: string; reason?: "expired" | "locked" }
   | { kind: "signedIn"; server: string; user: SessionUser };
 
 export type SessionEvent =
   | { type: "restored"; server: string | null; user: SessionUser | null }
   | { type: "serverChosen"; server: string }
   | { type: "changeServer" }
-  | { type: "mfaRequired"; mfaToken: string; methods: MfaMethod[] }
   | { type: "authenticated"; user: SessionUser }
-  /** The account changed from this app (name, status, zone): the screens show it at once. */
+  /** The account changed from this app (status, zone): the screens show it at once. */
   | { type: "userUpdated"; patch: Partial<SessionUser> }
   | { type: "unauthorized" }
   | { type: "signedOut"; reason?: "locked" };
@@ -41,8 +41,6 @@ export function sessionReducer(state: SessionState, event: SessionEvent): Sessio
       return { kind: "signedOut", server: event.server };
     case "changeServer":
       return { kind: "needsServer" };
-    case "mfaRequired":
-      return server ? { kind: "mfa", server, mfaToken: event.mfaToken, methods: event.methods } : state;
     case "authenticated":
       return server ? { kind: "signedIn", server, user: event.user } : state;
     case "userUpdated":
@@ -52,7 +50,6 @@ export function sessionReducer(state: SessionState, event: SessionEvent): Sessio
       return state.kind === "signedIn" ? { kind: "signedOut", server: state.server, reason: "expired" } : state;
     case "signedOut":
       if (!server) return { kind: "needsServer" };
-      if (event.reason) return { kind: "signedOut", server, reason: event.reason };
-      return state.kind === "mfa" ? { kind: "signedOut", server, reason: "signIn" } : { kind: "signedOut", server };
+      return event.reason ? { kind: "signedOut", server, reason: event.reason } : { kind: "signedOut", server };
   }
 }

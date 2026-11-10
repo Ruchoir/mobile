@@ -6,7 +6,7 @@
  * The shared `auditLine` decides which sentence a line is and what fills it; the words come from
  * the dictionary through `Words`, so nothing here is French.
  */
-import type { AuditEntryLike, AuditLine, Slot } from "../api/client/permissionsLogic/index.ts";
+import type { AuditEntryLike, AuditLine, Slot } from "./shared/permissionsLogic/index.ts";
 
 import { dayKey } from "./format.ts";
 

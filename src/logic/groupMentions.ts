@@ -4,8 +4,8 @@
  * so a pill lights exactly when a notification goes out and a message reads the same everywhere.
  * The body carries nothing but the name: `@Comptabilité`, `@Chantier Rennes`.
  */
-import type { Group } from "../api/client/index.ts";
-import { foldMention, groupHitsFor } from "../api/client/permissionsLogic/index.ts";
+import type { Group } from "../products/index.ts";
+import { foldMention, groupHitsFor } from "./shared/permissionsLogic/index.ts";
 
 // The matching itself (`matchGroupMention`, `foldMention`) is shared with the web: `@ruchoir/client`.
 

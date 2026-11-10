@@ -1,4 +1,4 @@
-import type { ApiMessage, BlankKind, SpaceFile } from "../api/client/index.ts";
+import type { ApiMessage, BlankKind, SpaceFile } from "../products/index.ts";
 import type { NavigatorScreenParams } from "@react-navigation/native";
 
 export type TabParams = {
@@ -17,26 +17,17 @@ export type RootParams = {
   search: undefined;
   /** The tutorial again, from Help. */
   tutorial: { replay: true };
-  /** Create or join a space, from the space sheet. */
-  joinSpace: undefined;
   /** My account's screens and sheets (mockup 11). */
   statusSheet: undefined;
-  profile: undefined;
   /** Every message I bookmarked, in every space. */
   saved: undefined;
   /** The account's notifications, from Today's bell. */
   notifications: undefined;
-  /** The instance's settings and giving access back to an account, for an instance administrator. */
-  instanceAdmin: undefined;
   preferences: undefined;
   languageSheet: undefined;
-  security: undefined;
   help: undefined;
   /** A time zone chosen for the form under it, handed back under `key` (`account/choice.ts`). */
   zonePicker: { key: string; current: string };
-  changePassword: undefined;
-  totp: { mode: "enable" | "disable" };
-  recoveryCodes: { codes: string[] };
   /**
    * A channel or a direct conversation; `channelId` is set for a channel (its agenda tab needs it).
    * `unread` is how many messages were new when it was opened, which places the "New messages" line;
@@ -132,45 +123,8 @@ export type RootParams = {
   spaceSheet: undefined;
   /** The current space's settings: the list of sections the caller reaches. */
   spaceSettings: undefined;
-  /** The sections, each a plain push from the list. */
-  spaceGeneral: undefined;
-  spaceMembers: undefined;
-  spaceRoles: undefined;
-  /** A role of the current space: its rights, its people, its name (the roles list opens it). */
-  roleEditor: { roleId: string };
-  /** A new role: its name and, optionally, the role it copies. */
-  roleCreate: undefined;
-  spaceGroups: undefined;
-  /** A group of the current space: its people, the roles it carries, its managers (the groups list opens it). */
-  groupEditor: { groupId: string };
   /** The people of a group a message named (`@Comptabilité`), from a tap on its pill. */
   groupPeople: { groupId: string };
-  /** A new group (name, description), which then opens its editor; with `groupId`, the name and description of that group. */
-  groupCreate: { groupId?: string } | undefined;
-  /**
-   * Who has access to a channel, a file or folder (`folder`), or a space calendar, at what level; `title`
-   * is its name as a person says it (a channel without the `#`). The level sheet, the adding screen,
-   * "Pourquoi ?" and "Personnaliser" open over it, each on the same `kind` and `resourceId`.
-   */
-  access: { kind: "channel" | "calendar" | "file"; resourceId: string; title: string; folder?: boolean; /** People just added from the add screen, for the private channel note. */ added?: { key: string; name: string }[] };
-  accessLevel: { kind: "channel" | "calendar" | "file"; resourceId: string; target: { kind: "everyone" | "role" | "group" | "user" | "audience"; id?: string }; title: string; folder?: boolean };
-  accessAdd: { kind: "channel" | "calendar" | "file"; resourceId: string; title: string; folder?: boolean };
-  why: { kind: "channel" | "calendar" | "file"; resourceId: string; userId: string; title: string; folder?: boolean };
-  customise: { kind: "channel" | "calendar" | "file"; resourceId: string; target: { kind: "everyone" | "role" | "group" | "user" | "audience"; id?: string } };
-  /** The space's calendars the caller manages, to open the access of one. */
-  calendarShare: undefined;
-  spaceAudit: undefined;
-  spaceLicence: undefined;
-  /** Installing a licence in the current space: pasted, or read from a file. */
-  licenceInstall: undefined;
-  /**
-   * A member of the current space: Profil and Gestion. `prolong` opens on the guest's end date;
-   * `spaceId` is the space the person belongs to when the caller selected it just before navigating
-   * (the screen waits for it to be the current one).
-   */
-  spaceMember: { userId: string; prolong?: true; spaceId?: string };
-  /** The current space's deletion, its name to type (owner). */
-  spaceDelete: undefined;
   /** How much the current space notifies me. */
   spaceNotify: undefined;
   /** The current space's default channel (owner and admins). */
@@ -204,8 +158,4 @@ export type AuthParams = {
   welcome: undefined;
   tutorial: { replay?: boolean } | undefined;
   signIn: undefined;
-  signUp: { invitation?: InvitationChoice } | undefined;
-  invitationLink: undefined;
-  verifyEmail: undefined;
-  forgotPassword: { email?: string } | undefined;
 };

@@ -21,3 +21,8 @@ export function normalizeServer(input: string): ServerCheck {
   if (!HOST.test(authority)) return { ok: false, reason: "invalid" };
   return { ok: true, origin: `https://${authority.replace(/:443$/, "")}` };
 }
+
+/** The domain an origin names: `example.org` for `https://example.org` or `https://hub.example.org`. */
+export function domainOf(origin: string): string {
+  return origin.replace(/^https:\/\//, "").replace(/^hub\./, "");
+}

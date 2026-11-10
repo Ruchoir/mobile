@@ -2,7 +2,7 @@
  * What the instance's office editor opens, if it has one (`getInstanceCapabilities().office`), and
  * what it does with a given file: the web's `officeActionFor`.
  */
-import { officeActionFor, type OfficeCapabilities } from "../api/client/index.ts";
+import { officeActionFor, type OfficeCapabilities } from "../products/index.ts";
 
 import { useApi } from "../api/useApi";
 import { useLoad } from "../data/useLoad";

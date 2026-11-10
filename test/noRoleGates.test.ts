@@ -14,7 +14,7 @@ function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = `${dir}/${name}`;
     // The monolith client copied under src/api/client is not the app's own code.
-    if (statSync(path).isDirectory()) return path.endsWith("/api/client") ? [] : files(path);
+    if (statSync(path).isDirectory()) return path.endsWith("/logic/shared") || path.endsWith("/products/shared") ? [] : files(path);
     return /\.tsx?$/.test(name) ? [path] : [];
   });
 }
@@ -48,15 +48,6 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   "logic/groupEditor.ts": { count: 1, why: "a guest cannot be appointed into a group: the guest ceiling, read on the person as data" },
   "logic/mentionGroups.ts": { count: 1, why: "a guest cannot mention a group: the guest ceiling (the server refuses it)" },
   "compose/Composer.tsx": { count: 1, why: "a guest gets no group in the mention suggestions: the guest ceiling" },
-  "screens/space/SpaceMembersScreen.tsx": { count: 5, why: "member rows: the roles a member holds, read as data (locked rows, the guest tag)" },
-  "screens/space/SpaceLicenceScreen.tsx": { count: 1, why: "the licence is the owner's alone" },
-  "screens/space/SpaceRolesScreen.tsx": { count: 2, why: "counts the owners, and the owner's own view of the roles" },
-  "screens/space/MemberScreen.tsx": { count: 3, why: "shows the roles a member holds, read as data" },
-  "screens/space/MemberManage.tsx": { count: 4, why: "ownership transfer is the owner's alone; shows the roles a member holds" },
-  "screens/space/MemberLegacy.tsx": { count: 4, why: "the legacy role picker of an instance without the permissions" },
-  "screens/space/GroupEditorScreen.tsx": { count: 1, why: "only an owner may appoint another owner into a group" },
-  "screens/space/RoleEditorScreen.tsx": { count: 1, why: "the Guests role lists the guests: a member's role read as data" },
-  "screens/access/AddTargetScreen.tsx": { count: 2, why: "a person picked for an access rule is tagged guest: a member's role read as data" },
   "screens/discussions/InviteScreen.tsx": { count: 3, why: "the role the invitation will give, not the viewer's" },
 };
 

@@ -2,7 +2,7 @@
  * "Write to a person": the space's people, a search, and "Write". One person opens the conversation
  * with them (the existing one if there is one); several make a group conversation.
  */
-import type { Member } from "../../api/client/index.ts";
+import type { Member } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState } from "react";

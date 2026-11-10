@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import type { Calendar, CalendarEvent, Occurrence } from "../src/api/client/index.ts";
+import type { Calendar, CalendarEvent, Occurrence } from "../src/products/index.ts";
 
 import {
   defaultCalendarId,

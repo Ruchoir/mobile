@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
 
 /**
  * Native modules Expo Go does not carry throw as soon as they are loaded, which takes the whole app

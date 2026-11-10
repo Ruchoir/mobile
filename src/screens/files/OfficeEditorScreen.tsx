@@ -15,7 +15,7 @@
  * for every few seconds and then opened instead, as on the web.
  */
 import { useBackgroundWrites } from "../../space/useBackgroundWrites";
-import { isApiError, type FileEditor, type OfficeSession, type SpaceFile } from "../../api/client/index.ts";
+import { isApiError, type FileEditor, type OfficeSession, type SpaceFile } from "../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { X } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";

@@ -1,4 +1,4 @@
-import { pickZone } from "../api/client/permissionsLogic/index.ts";
+import { pickZone } from "../logic/shared/permissionsLogic/index.ts";
 
 import { useTranslation } from ".";
 import { useSession } from "../session/SessionProvider";

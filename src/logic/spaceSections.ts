@@ -6,8 +6,8 @@
  * On an instance without the permissions (`supported` false) the settings keep what they always were:
  * General for everyone, Members for the owner and the admins (`canAdminister`).
  */
-import { rightsOf, type spaceGates } from "../api/client/permissionsLogic/index.ts";
-import type { Workspace } from "../api/client/index.ts";
+import { rightsOf, type spaceGates } from "./shared/permissionsLogic/index.ts";
+import type { Workspace } from "../products/index.ts";
 
 import { legacyDoors } from "./spaceRoles.ts";
 

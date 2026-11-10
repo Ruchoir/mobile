@@ -1,4 +1,4 @@
-import type { Member } from "../../api/client/index.ts";
+import type { Member } from "../../products/index.ts";
 import { Check, SearchX } from "lucide-react-native";
 import { FlatList, Pressable, StyleSheet, View, type FlatListProps } from "react-native";
 

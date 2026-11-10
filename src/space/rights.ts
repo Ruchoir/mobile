@@ -3,8 +3,8 @@
  * the web's gates). `supported` is whether the instance knows the permissions at all: without it the
  * settings keep their two tabs, decided by the legacy role (`logic/spaceSections.ts`).
  */
-import type { Channel } from "../api/client/index.ts";
-import { channelGates, createGates, rightsOf, spaceGates } from "../api/client/permissionsLogic/index.ts";
+import type { Channel } from "../products/index.ts";
+import { channelGates, createGates, rightsOf, spaceGates } from "../logic/shared/permissionsLogic/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useMemo } from "react";
 

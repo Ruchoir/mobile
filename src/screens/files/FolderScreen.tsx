@@ -1,4 +1,4 @@
-import { isApiError } from "../../api/client/index.ts";
+import { isApiError } from "../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { FolderOpen, Upload } from "lucide-react-native";

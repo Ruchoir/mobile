@@ -4,7 +4,7 @@
  * warning card. The wording and the dates come from `@ruchoir/client/permissionsLogic`, shared with
  * the web.
  */
-import { daysLeft, endedNoticeKeys, endedSpaces, expiryTone, guestBanner, noticeTarget, SOON_DAYS } from "../api/client/permissionsLogic/index.ts";
+import { daysLeft, endedNoticeKeys, endedSpaces, expiryTone, guestBanner, noticeTarget, SOON_DAYS } from "./shared/permissionsLogic/index.ts";
 
 /** The two guest notices; a tap on either is handled by `tapTarget` from this data. */
 export function isGuestNotice(kind: string): boolean {

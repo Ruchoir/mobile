@@ -5,7 +5,7 @@
  * phone may not hold every file, an old one out of a "Recent" view for one. One goes at a time; the
  * screens show the queue and the uploads provider sends what `nextToSend` gives.
  */
-import type { DuplicateAnswer, UploadDuplicate } from "../api/client/index.ts";
+import type { DuplicateAnswer, UploadDuplicate } from "../products/index.ts";
 
 import type { LocalFile } from "../compose/useAttachments.ts";
 

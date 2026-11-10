@@ -5,7 +5,7 @@
  * the app shows no editor yet). `affects` says, for each list a screen loads, which events change it,
  * so every screen reloads on the same rule. Kept free of React so Node tests it.
  */
-import type { AccountPrefsDoc, ApiMessage, MemberIdentity, Presence, RealtimeHandlers } from "../api/client/index.ts";
+import type { AccountPrefsDoc, ApiMessage, MemberIdentity, Presence, RealtimeHandlers } from "../products/index.ts";
 
 export type RealtimeEvent =
   | { type: "message"; change: "created" | "updated" | "deleted"; conversationId: string; message: ApiMessage }

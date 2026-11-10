@@ -1,4 +1,4 @@
-import { FAMILY_COLOR, fileFamily, type FileFamily } from "../api/client/index.ts";
+import { FAMILY_COLOR, fileFamily, type FileFamily } from "../products/index.ts";
 import {
   BookOpen,
   Box,

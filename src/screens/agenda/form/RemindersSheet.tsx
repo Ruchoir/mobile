@@ -1,4 +1,4 @@
-import { customMinutes, MAX_REMINDERS, presetReminders, reminderLabel, remindersLabel, type ReminderUnit } from "../../../api/client/calendarLogic/index.ts";
+import { customMinutes, MAX_REMINDERS, presetReminders, reminderLabel, remindersLabel, type ReminderUnit } from "../../../logic/shared/calendarLogic/index.ts";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import { Bell, CalendarDays, Plus, SlidersHorizontal, SquarePen, X } from "lucide-react-native";
 import { useState } from "react";

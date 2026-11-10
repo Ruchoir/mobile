@@ -3,7 +3,7 @@
  * or a channel, once someone's read cursor has reached it. Only when that message is the newest one:
  * an answer below it already says so. The wording is the web's (`ReadReceipt`).
  */
-import type { ReadCursor } from "../api/client/index.ts";
+import type { ReadCursor } from "../products/index.ts";
 
 type FeedMessage = { id: string; authorId?: string; kind?: string };
 

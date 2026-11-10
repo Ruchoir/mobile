@@ -6,7 +6,7 @@ import { Avatar as DiceAvatar, Style } from "@dicebear/core";
 import blobsDef from "@dicebear/styles/blobs.json";
 import cameoDef from "@dicebear/styles/cameo.json";
 import gazeDef from "@dicebear/styles/gaze.json";
-import type { Presence } from "../api/client/index.ts";
+import type { Presence } from "../products/index.ts";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";

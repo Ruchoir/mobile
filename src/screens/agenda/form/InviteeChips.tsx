@@ -1,4 +1,4 @@
-import type { AttendeeStatus } from "../../../api/client/index.ts";
+import type { AttendeeStatus } from "../../../products/index.ts";
 import { Check, Clock, HelpCircle, Mail, X } from "lucide-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 

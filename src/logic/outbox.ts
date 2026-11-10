@@ -7,7 +7,7 @@
  * answer, or a send whose answer was lost): from then on the item is the message, and a retry
  * would post it twice.
  */
-import type { ApiMessage, InlineImage, MessageAttachment } from "../api/client/index.ts";
+import type { ApiMessage, InlineImage, MessageAttachment } from "../products/index.ts";
 
 export type OutboxItem = {
   localId: string;

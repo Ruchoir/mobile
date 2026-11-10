@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useApi } from "../api/useApi";
 import { key, useTranslation } from "../i18n";
 import { useWide } from "../layout/useWide";
 import { topInsetUnderBanner } from "../logic/preview";
@@ -34,15 +35,17 @@ const TABS: Record<keyof TabParams, { icon: LucideIcon; label: ReturnType<typeof
 /** The four tabs of the mockups, over the bar drawn below; on a wide window the bar is a rail on the left. */
 export function Tabs() {
   const wide = useWide();
+  const { installed } = useApi();
   return (
     <Tab.Navigator
       screenOptions={{ headerShown: false, tabBarPosition: wide ? "left" : "bottom" }}
       tabBar={(props) => (wide ? <Rail {...props} /> : <TabBar {...props} />)}
     >
       <Tab.Screen name="today" component={TodayScreen} />
-      <Tab.Screen name="discussions" component={DiscussionsScreen} />
-      <Tab.Screen name="agenda" component={AgendaScreen} />
-      <Tab.Screen name="files" component={FilesScreen} />
+      {/* A product's tab shows only when the instance's manifest lists the product. */}
+      {installed("chat") ? <Tab.Screen name="discussions" component={DiscussionsScreen} /> : null}
+      {installed("calendar") ? <Tab.Screen name="agenda" component={AgendaScreen} /> : null}
+      {installed("drive") ? <Tab.Screen name="files" component={FilesScreen} /> : null}
     </Tab.Navigator>
   );
 }

@@ -1,5 +1,5 @@
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-import { isApiError, type NotificationPreferences } from "../../api/client/index.ts";
+import { isApiError, type NotificationPreferences } from "../../products/index.ts";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { Alert, Linking, Platform, Pressable, StyleSheet, View } from "react-native";

@@ -1,4 +1,4 @@
-import { fileExtension } from "../../api/client/index.ts";
+import { fileExtension } from "../../products/index.ts";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";

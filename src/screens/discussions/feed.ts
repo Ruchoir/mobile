@@ -3,7 +3,7 @@
  * edit of one of mine, and who is writing. Each screen loads its own messages and draws its own
  * rows; these hooks keep them true.
  */
-import type { ApiMessage, Member, SessionUser } from "../../api/client/index.ts";
+import type { ApiMessage, Member, SessionUser } from "../../products/index.ts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 

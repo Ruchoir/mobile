@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { auditLine, type Slot } from "../src/api/client/permissionsLogic/index.ts";
+import { auditLine, type Slot } from "../src/logic/shared/permissionsLogic/index.ts";
 
 import { chipsOf, fillFor, groupEntriesByDay, lineRuns, mergeFirstPage, mergePages, MARK, slotRuns, type Words } from "../src/logic/auditRender.ts";
 

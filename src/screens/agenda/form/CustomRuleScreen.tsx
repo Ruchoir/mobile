@@ -1,4 +1,4 @@
-import { WEEKDAYS, rulePhrase, weekdayCode, withStartDay, type Frequency, type MonthlyMode, type RuleForm, type Weekday } from "../../../api/client/calendarLogic/index.ts";
+import { WEEKDAYS, rulePhrase, weekdayCode, withStartDay, type Frequency, type MonthlyMode, type RuleForm, type Weekday } from "../../../logic/shared/calendarLogic/index.ts";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";

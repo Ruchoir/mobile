@@ -1,4 +1,4 @@
-import type { ApiMessage, Group } from "../../api/client/index.ts";
+import type { ApiMessage, Group } from "../../products/index.ts";
 import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
 import { MessageSquare, Pin } from "lucide-react-native";

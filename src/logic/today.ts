@@ -3,7 +3,7 @@
  * unread message that names or answers the reader in this space, the next event of today (one that
  * has begun and not ended counts), and the newest file of the last 48 hours.
  */
-import type { ApiNotification, Occurrence, SpaceFile } from "../api/client/index.ts";
+import type { ApiNotification, Occurrence, SpaceFile } from "../products/index.ts";
 
 import { dayKey } from "./format.ts";
 

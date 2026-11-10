@@ -1,4 +1,4 @@
-import type { LinkableChannel } from "../../../api/client/index.ts";
+import type { LinkableChannel } from "../../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { Check, Hash, Lock, MessageSquareOff } from "lucide-react-native";
 import { Fragment } from "react";

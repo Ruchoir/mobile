@@ -3,7 +3,7 @@
  * leaving a folder does not stop them. One goes at a time, with its progress; the list then reloads
  * through the live `files` event. The queue itself is `logic/uploadQueue.ts`.
  */
-import { isApiError } from "../api/client/index.ts";
+import { isApiError } from "../products/index.ts";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { useApi } from "../api/useApi";

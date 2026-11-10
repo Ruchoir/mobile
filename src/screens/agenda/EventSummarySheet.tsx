@@ -1,5 +1,5 @@
-import type { AttendeeStatus, EditScope } from "../../api/client/index.ts";
-import { localDay, parseRule, remindersLabel, rulePhrase } from "../../api/client/calendarLogic/index.ts";
+import type { AttendeeStatus, EditScope } from "../../products/index.ts";
+import { localDay, parseRule, remindersLabel, rulePhrase } from "../../logic/shared/calendarLogic/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Bell, CalendarDays, ChevronRight, Clock, Download, MapPin, MessageSquare, Paperclip, SquarePen, Trash2, Users, X } from "lucide-react-native";

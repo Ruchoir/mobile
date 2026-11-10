@@ -1,5 +1,5 @@
-import type { FileVersion } from "../../api/client/index.ts";
-import { canManage } from "../../api/client/filesLogic/index.ts";
+import type { FileVersion } from "../../products/index.ts";
+import { canManage } from "../../logic/shared/filesLogic/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { History, RotateCcw } from "lucide-react-native";

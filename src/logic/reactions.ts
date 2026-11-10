@@ -2,7 +2,7 @@
  * A tap on a reaction, applied on screen before the server hears of it: mine is added or removed,
  * the count follows, an empty pill goes away. Applied twice, it lands where it started.
  */
-import type { Reaction } from "../api/client/index.ts";
+import type { Reaction } from "../products/index.ts";
 
 export function toggleReaction(reactions: Reaction[] | undefined, emoji: string, myName: string): Reaction[] {
   const list = reactions ?? [];

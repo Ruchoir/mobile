@@ -4,8 +4,8 @@
  * asking on every screen would be a 403 each time. One cached result per instance and space, shared
  * by every screen that watches it.
  */
-import type { Group } from "../api/client/index.ts";
-import { rightsOf } from "../api/client/permissionsLogic/index.ts";
+import type { Group } from "../products/index.ts";
+import { rightsOf } from "./shared/permissionsLogic/index.ts";
 
 /** Whether the viewer may read the groups of the space (and the instance has them at all). */
 export function mayListGroups(space: { role: string; myPermissions?: string[] } | undefined, supported: boolean): boolean {

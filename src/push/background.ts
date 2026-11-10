@@ -4,7 +4,7 @@
  *
  * - a wake (Android only: on an iPhone the Notification Service Extension, `targets/notifications`,
  *   handles it without the app): ask every instance the phone is signed in to what to show
- *   (`GET /api/v1/push/pending`, as the browsers' service worker does, ADR 0007), draw it as local
+ *   (`GET /api/v1/me/push/pending`, as the browsers' service worker does, ADR 0007), draw it as local
  *   notifications, each carrying its instance and id, and set the icon's count;
  * - a sync, silent, on both systems: something was read on another device. Count the unread again
  *   for the icon, and take the notifications read since off the screen (`syncRead`).
@@ -35,7 +35,7 @@ export async function showPending(): Promise<void> {
   if (!Notifications) return;
   const accounts = parseSharedAccounts(await SecureStore.getItemAsync(SHARED_ACCOUNTS, SHARED));
   const answers = await fromEvery(accounts, async ({ server, token }) => {
-    const response = await fetch(`${server}/api/v1/push/pending`, {
+    const response = await fetch(`${server}/api/v1/me/push/pending`, {
       headers: { authorization: `Bearer ${token}`, accept: "application/json" },
     });
     if (!response.ok) throw new Error(String(response.status));
@@ -48,7 +48,7 @@ export async function showPending(): Promise<void> {
   );
   // The icon's count: every instance's unread notifications, as the bell counts them.
   const counts = await fromEvery(accounts, async ({ server, token }) => {
-    const response = await fetch(`${server}/api/v1/notifications?unread=true&limit=1`, {
+    const response = await fetch(`${server}/api/v1/me/inbox?unread=true&limit=1`, {
       headers: { authorization: `Bearer ${token}`, accept: "application/json" },
     });
     if (!response.ok) throw new Error(String(response.status));
@@ -85,12 +85,12 @@ export async function syncRead(): Promise<void> {
   if (!Notifications) return;
   const accounts = parseSharedAccounts(await SecureStore.getItemAsync(SHARED_ACCOUNTS, SHARED));
   const answers = await fromEvery(accounts, async ({ server, token }) => {
-    const response = await fetch(`${server}/api/v1/notifications?unread=true&limit=${UNREAD_PAGE}`, {
+    const response = await fetch(`${server}/api/v1/me/inbox?unread=true&limit=${UNREAD_PAGE}`, {
       headers: { authorization: `Bearer ${token}`, accept: "application/json" },
     });
     if (!response.ok) throw new Error(String(response.status));
-    const feed = (await response.json()) as { notifications?: { id?: unknown }[]; unread_count?: number };
-    const ids = (feed.notifications ?? []).flatMap((n) => (typeof n.id === "string" ? [n.id] : []));
+    const feed = (await response.json()) as { entries?: { id?: unknown }[]; unread_count?: number };
+    const ids = (feed.entries ?? []).flatMap((n) => (typeof n.id === "string" ? [n.id] : []));
     const count = typeof feed.unread_count === "number" ? feed.unread_count : ids.length;
     return { count, unread: { unread: new Set(ids), complete: count <= ids.length } satisfies Unread };
   });

@@ -1,4 +1,4 @@
-import type { LinkPreview } from "../../api/client/index.ts";
+import type { LinkPreview } from "../../products/index.ts";
 import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
 import { Pressable, StyleSheet, View } from "react-native";

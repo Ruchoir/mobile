@@ -6,7 +6,7 @@
  * arithmetic runs in UTC where a day is always 24 hours; the reader's zone only matters when an
  * instant is turned into a day, which `dayKey` does.
  */
-import type { Occurrence } from "../api/client/index.ts";
+import type { Occurrence } from "../products/index.ts";
 
 import { dayKey } from "./format.ts";
 

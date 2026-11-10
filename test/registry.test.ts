@@ -5,21 +5,16 @@ import {
   addInstance,
   EMPTY_REGISTRY,
   findByOrigin,
-  migrateLegacy,
   parseRegistry,
   removeInstance,
   setActive,
   setLastSpace,
 } from "../src/accounts/registry.ts";
 
-const A = { id: "a", origin: "https://a.test" };
-const B = { id: "b", origin: "https://b.test" };
-const C = { id: "c", origin: "https://c.test" };
-
-test("an_update_keeps_the_instance_and_its_last_space", () => {
-  const registry = migrateLegacy("https://a.test", "s1", "a");
-  assert.deepEqual(registry, { instances: [A], active: "a", lastSpace: { a: "s1" } });
-});
+const at = (domain: string) => ({ domain, issuer: `https://id.${domain}`, products: [] });
+const A = { id: "a", origin: "a.test", instance: at("a.test") };
+const B = { id: "b", origin: "b.test", instance: at("b.test") };
+const C = { id: "c", origin: "c.test", instance: at("c.test") };
 
 test("adding_makes_the_new_instance_active", () => {
   const registry = addInstance(addInstance(EMPTY_REGISTRY, A), B);
@@ -28,10 +23,10 @@ test("adding_makes_the_new_instance_active", () => {
 });
 
 test("adding_a_known_origin_only_activates_it", () => {
-  const registry = addInstance(addInstance(addInstance(EMPTY_REGISTRY, A), B), { id: "other", origin: "https://a.test" });
+  const registry = addInstance(addInstance(addInstance(EMPTY_REGISTRY, A), B), { id: "other", origin: "a.test", instance: at("a.test") });
   assert.deepEqual(registry.instances, [A, B]);
   assert.equal(registry.active, "a");
-  assert.equal(findByOrigin(registry, "https://a.test")?.id, "a");
+  assert.equal(findByOrigin(registry, "a.test")?.id, "a");
 });
 
 test("removing_the_active_one_activates_its_neighbour", () => {

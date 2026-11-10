@@ -1,7 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { Workspace } from "../../api/client/index.ts";
-import { Bell, Check, LogIn, LogOut, Plus, Server, Settings, UserPlus, WifiOff } from "lucide-react-native";
+import type { Workspace } from "../../products/index.ts";
+import { Check, LogIn, LogOut, Plus, Server, Settings, UserPlus, WifiOff } from "lucide-react-native";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { useAccounts, type Account } from "../../accounts/AccountsProvider";
@@ -19,7 +19,8 @@ import { Avatar } from "../../ui/Avatar";
 import { Sheet } from "../../ui/Sheet";
 import { LoadState } from "../../ui/States";
 import { Text } from "../../ui/Text";
-import { useLeaveSpace } from "./useLeaveSpace";
+import { useApi } from "../../api/useApi";
+import { openPropolisPage } from "../../products/auth.ts";
 
 /**
  * "Switch space" (mockup 10): every space with its unread count, of every instance the phone is
@@ -35,7 +36,9 @@ export function SpaceSheet() {
   const navigation = useNavigation<NativeStackNavigationProp<RootParams>>();
   const { spaces, current, select } = useSpace();
   const accounts = useAccounts();
-  const leave = useLeaveSpace();
+  // Inviting, leaving and joining an organisation are Propolis's: its page opens in the authentication browser.
+  const { issuer } = useApi().instance;
+  const propolis = () => void openPropolisPage(issuer, "/account");
   const { supported, gates } = useRights();
   const sections = groupSpaces(accounts.accounts, accounts.summaries);
   const activeId = accounts.active?.id;
@@ -93,12 +96,11 @@ export function SpaceSheet() {
             {current.name}
           </Text>
           {(supported ? gates.invite : legacyDoors(current.role).invite) ? (
-            <ActionRow icon={UserPlus} tint={c.pink} title={t("spaceAdmin.invite")} onPress={() => open("invite")} />
+            <ActionRow icon={UserPlus} tint={c.pink} title={t("spaceAdmin.invite")} onPress={propolis} />
           ) : null}
           {(supported ? gates.openSettings : legacyDoors(current.role).openSettings) ? (
             <ActionRow icon={Settings} tint={c.sky} title={t("spaceAdmin.settings")} onPress={() => open("spaceSettings")} />
           ) : null}
-          <ActionRow icon={Bell} tint={c.sun} title={t("spaceAdmin.notifications")} onPress={() => open("spaceNotify")} />
           <ActionRow
             icon={LogOut}
            
@@ -106,7 +108,7 @@ export function SpaceSheet() {
             danger
             onPress={() => {
               navigation.goBack();
-              leave(current);
+              propolis();
             }}
           />
           <View style={styles.gap} />
@@ -120,7 +122,7 @@ export function SpaceSheet() {
         subtitle={t("joinSpace.rowHint")}
         onPress={() => {
           navigation.goBack();
-          navigation.navigate("joinSpace");
+          propolis();
         }}
       />
     </Sheet>

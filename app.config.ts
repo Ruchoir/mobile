@@ -35,7 +35,9 @@ export function appConfig(env: Env): ExpoConfig {
   return {
     name: "Ruchoir",
     slug: "ruchoir",
-    scheme: "ruchoir",
+    // `ruchoir://` for the app's own links; `com.ruchoir.app:` brings the browser back from
+    // Propolis's sign-in (RFC 8252, section 7.1).
+    scheme: ["ruchoir", "com.ruchoir.app"],
     version: "0.1.0",
     // Every orientation for tablets (an iPad app must take all four); phones are held upright at
     // launch (src/App.tsx).

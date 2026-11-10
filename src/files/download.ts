@@ -2,7 +2,7 @@
  * Fetch a file into the app's cache (with the bearer), once: a file already there is opened again
  * without a request. The cache is emptied at sign-out (`cache.ts`).
  */
-import type { RuchoirClient } from "../api/client/index.ts";
+import type { RuchoirClient } from "../products/index.ts";
 import { File } from "expo-file-system";
 
 import { authHeadersFor } from "../api/useApi";

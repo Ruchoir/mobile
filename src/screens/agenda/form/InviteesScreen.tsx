@@ -1,4 +1,4 @@
-import type { Invitee } from "../../../api/client/index.ts";
+import type { Invitee } from "../../../products/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { Mail } from "lucide-react-native";
 import { useEffect, useState } from "react";

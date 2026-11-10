@@ -2,7 +2,7 @@
  * The scope chosen for a change to a date of a series, handed back from its sheet to whoever asked
  * (the form saving, the summary deleting), which is still mounted under the sheet.
  */
-import type { EditScope } from "../../../api/client/index.ts";
+import type { EditScope } from "../../../products/index.ts";
 import { useEffect, useRef } from "react";
 
 export type ScopeRequest = { key: string; scope: EditScope };

@@ -4,6 +4,9 @@
  * navigation (`accounts/useLinkRouter`); mounted by `RootNavigator`, beside the notifications' taps.
  */
 import type { NavigationContainerRefWithCurrent } from "@react-navigation/native";
+
+import { useApi } from "../api/useApi";
+import { openPropolisPage } from "../products/auth.ts";
 import { useCallback, useEffect, useRef } from "react";
 
 import { onLink, takeLink } from "../accounts/pendingLink";
@@ -13,6 +16,7 @@ import { useSpace } from "../space/SpaceProvider";
 import type { RootParams } from "./types";
 
 export function useAppLinks(navigation: NavigationContainerRefWithCurrent<RootParams>, instanceId: string): { onReady: () => void } {
+  const { issuer } = useApi().instance;
   const { select, current, spaces } = useSpace();
   // The reminder mail's link, waiting for the space list when the app was just opened by it.
   const prolonging = useRef<{ spaceSlug: string; userId: string } | null>(null);
@@ -26,8 +30,9 @@ export function useAppLinks(navigation: NavigationContainerRefWithCurrent<RootPa
     prolonging.current = null;
     if (step.kind === "drop") return;
     select(step.space.id);
-    navigation.navigate("spaceMember", { userId: wanted.userId, prolong: true, spaceId: step.space.id });
-  }, [navigation, select, spaces.data]);
+    // Prolonging a guest is Propolis's: its page opens in the authentication browser.
+    void openPropolisPage(issuer, "/account");
+  }, [issuer, select, spaces.data]);
 
   useEffect(() => {
     if (spaces.data) openProlong();

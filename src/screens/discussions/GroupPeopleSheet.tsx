@@ -4,10 +4,10 @@
  * roles and a tag for the group's managers. Whoever may change the group also gets a way into its
  * editor.
  */
-import { groupPeople } from "../../api/client/permissionsLogic/index.ts";
+import { groupPeople } from "../../logic/shared/permissionsLogic/index.ts";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Pencil, Users } from "lucide-react-native";
+import { Users } from "lucide-react-native";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -70,14 +70,6 @@ export function GroupPeopleSheet() {
             trailing={group?.managerIds.includes(m.userId) ? <GroupTag label={t("groups.manager")} /> : undefined}
           />
         ))}
-        {canOpen ? (
-          <ActionRow
-            icon={Pencil}
-            title={t("groups.openEditor")}
-            subtitle={t("groups.openEditorHint")}
-            onPress={() => navigation.replace("groupEditor", { groupId: params.groupId })}
-          />
-        ) : null}
       </ScrollView>
     </View>
   );

@@ -54,7 +54,7 @@ import {
   type StepGroup,
   type StepLike,
   type WhyRoleLike,
-} from "../api/client/permissionsLogic/index.ts";
+} from "./shared/permissionsLogic/index.ts";
 
 type Say = (key: string, vars?: Record<string, string | number>) => string;
 

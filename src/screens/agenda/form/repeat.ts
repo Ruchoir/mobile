@@ -2,7 +2,7 @@
  * The repetition as the form says it: the usual rules in words (the web's phrases, from the shared
  * `rulePhrase`), and what the draft repeats.
  */
-import { parseRule, presetRule, rulePhrase, withStartDay, type Preset, type Translate } from "../../../api/client/calendarLogic/index.ts";
+import { parseRule, presetRule, rulePhrase, withStartDay, type Preset, type Translate } from "../../../logic/shared/calendarLogic/index.ts";
 
 import type { EventDraft } from "../../../logic/eventForm.ts";
 

@@ -57,9 +57,19 @@ async function accounts(): Promise<SharedAccount[]> {
   return parseSharedAccounts(await SecureStore.getItemAsync(SHARED_ACCOUNTS, SHARED).catch(() => null));
 }
 
-async function get<T>(account: SharedAccount | undefined, path: string, init?: { method: string; body: string }): Promise<T | null> {
-  if (!account) return null;
-  const { server, token } = account;
+/**
+ * Ask one product of an instance: the hub by default, the calendar or the chat when named (only
+ * when the manifest lists it: the app shares nothing for a product that is not installed).
+ */
+async function get<T>(
+  account: SharedAccount | undefined,
+  path: string,
+  init?: { method: string; body: string },
+  product?: "calendar" | "chat",
+): Promise<T | null> {
+  const target = product ? account?.[product] : account ? { url: account.server, token: account.token } : undefined;
+  if (!target) return null;
+  const { url: server, token } = target;
   try {
     const response = await fetch(`${server}/api/v1${path}`, {
       method: init?.method ?? "GET",
@@ -310,7 +320,7 @@ async function palettes(): Promise<{ light: WidgetPalette; dark: WidgetPalette }
 async function conversations(account: SharedAccount, space: string): Promise<Row[] | null> {
   type Channel = { id: string; name: string; member: boolean; unread: number; last_message?: WireLast };
   type Direct = { id: string; name: string; unread: number; last_message?: WireLast };
-  const [channels, directs] = await Promise.all([get<Channel[]>(account, `/spaces/${space}/channels`), get<Direct[]>(account, `/spaces/${space}/dms`)]);
+  const [channels, directs] = await Promise.all([get<Channel[]>(account, `/organisations/${space}/channels`, undefined, "chat"), get<Direct[]>(account, `/organisations/${space}/dms`, undefined, "chat")]);
   if (!channels && !directs) return null;
   const said = (who: string, text: string) => t("discussions.by", { who, text });
   const you = t("spaceAdmin.you");
@@ -327,8 +337,8 @@ async function render(widgetName: string): Promise<WidgetRepresentation | null> 
   const all = await accounts();
   const out = all.length === 0;
   // Asked of every instance: null when none of them answered.
-  const fromAll = async <T,>(path: string): Promise<T[] | null> => {
-    const answers = (await fromEvery(all, (account) => get<T[]>(account, path).then((rows) => rows && rows.map((row) => ({ ...row, server: account.server }))))).flatMap(
+  const fromAll = async <T,>(path: string, product: "calendar" | "chat"): Promise<T[] | null> => {
+    const answers = (await fromEvery(all.filter((a) => a[product]), (account) => get<T[]>(account, path, undefined, product).then((rows) => rows && rows.map((row) => ({ ...row, server: account.server }))))).flatMap(
       (a) => (a.value ? [a.value] : []),
     );
     return answers.length === 0 ? null : answers.flat();
@@ -342,15 +352,15 @@ async function render(widgetName: string): Promise<WidgetRepresentation | null> 
       if (out) return both((p) => <NextView p={p} message={t("widgets.signIn")} />);
       const now = new Date();
       const to = new Date(now.getTime() + 7 * 86_400_000).toISOString();
-      const events = await fromAll<Event>(`/calendar/occurrences?from=${encodeURIComponent(now.toISOString())}&to=${encodeURIComponent(to)}`);
+      const events = await fromAll<Event>(`/calendar/occurrences?from=${encodeURIComponent(now.toISOString())}&to=${encodeURIComponent(to)}`, "calendar");
       const next = upcoming(events ?? [], now, 1)[0] as Event | undefined;
       return both((p) => <NextView p={p} event={next} message={events === null ? t("widgets.unreachable") : undefined} />);
     }
     case "RuchoirReply": {
       if (out) return both((p) => <ReplyView p={p} message={t("widgets.signIn")} />);
       const pages = await fromEvery(all, (account) =>
-        get<{ notifications: Note[] }>(account, "/notifications?unread=true&limit=20").then((page) =>
-          page ? page.notifications.map((n) => ({ ...n, server: account.server })) : null,
+        get<{ entries: { id: string; kind: string; created_at: string; variables?: Record<string, unknown> }[] }>(account, "/me/inbox?unread=true&limit=20").then((page) =>
+          page ? page.entries.map((e) => ({ ...e.variables, id: e.id, kind: e.kind, created_at: e.created_at, server: account.server }) as Note) : null,
         ),
       );
       const answered = pages.flatMap((a) => (a.value ? [a.value] : []));
@@ -368,8 +378,10 @@ async function render(widgetName: string): Promise<WidgetRepresentation | null> 
         SecureStore.getItemAsync(SHARED_SPACE_SERVER, SHARED).catch(() => null),
         SecureStore.getItemAsync(SHARED_SPACE, SHARED).catch(() => null),
       ]);
-      const account = all.find((a) => a.server === server) ?? all[0];
-      const spaces = await get<{ id: string }[]>(account, "/me/spaces");
+      const withChat = all.filter((a) => a.chat);
+      if (withChat.length === 0) return both((p) => <DiscussionsView p={p} rows={[]} message={t("widgets.unreachable")} />);
+      const account = withChat.find((a) => a.server === server) ?? withChat[0];
+      const spaces = await get<{ id: string }[]>(account, "/me/organisations", undefined, "chat");
       const space = spaces?.find((s) => s.id === chosen)?.id ?? spaces?.[0]?.id;
       const rows = space ? await conversations(account, space) : null;
       return both((p) => <DiscussionsView p={p} rows={(rows ?? []).slice(0, 3)} message={spaces === null || (space && rows === null) ? t("widgets.unreachable") : undefined} />);
@@ -387,9 +399,9 @@ export async function widgetTaskHandler({ widgetInfo, widgetAction, clickAction,
   if (widgetAction === "WIDGET_CLICK" && clickAction === "ACCEPT" && typeof clickActionData?.eventId === "string") {
     const all = await accounts();
     const account = all.find((a) => a.server === clickActionData.server) ?? all[0];
-    await get(account, `/events/${clickActionData.eventId}/response`, { method: "PUT", body: JSON.stringify({ status: "accepted" }) });
+    await get(account, `/events/${clickActionData.eventId}/response`, { method: "PUT", body: JSON.stringify({ status: "accepted" }) }, "calendar");
     if (typeof clickActionData.notificationId === "string") {
-      await get(account, `/notifications/${clickActionData.notificationId}/read`, { method: "PUT", body: "{}" });
+      await get(account, `/me/inbox/${clickActionData.notificationId}/read`, { method: "POST", body: "{}" });
     }
   }
   const shown = await render(widgetInfo.widgetName);

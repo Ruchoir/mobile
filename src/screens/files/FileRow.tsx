@@ -1,4 +1,4 @@
-import type { RuchoirClient, SpaceFile } from "../../api/client/index.ts";
+import type { RuchoirClient, SpaceFile } from "../../products/index.ts";
 import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import { ChevronRight, Ellipsis, Folder, Star } from "lucide-react-native";
 import { Pressable, StyleSheet, View } from "react-native";

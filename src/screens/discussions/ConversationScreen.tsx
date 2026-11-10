@@ -1,4 +1,4 @@
-import { isInFeed as inFeed, type ApiMessage, type Channel } from "../../api/client/index.ts";
+import { isInFeed as inFeed, type ApiMessage, type Channel } from "../../products/index.ts";
 import { useNavigation, useRoute, type NavigationProp, type RouteProp } from "@react-navigation/native";
 import { Archive, ArrowDown, CalendarDays, CheckCheck, ChevronLeft, FileText, Info, MessageSquare, Pin } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
