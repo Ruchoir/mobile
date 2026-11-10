@@ -1,0 +1,211 @@
+import type { Workspace } from "../../api/client/index.ts";
+import { NavigationContext } from "@react-navigation/native";
+import { Mail, Plus, type LucideIcon } from "lucide-react-native";
+import { useContext, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useAccounts } from "../../accounts/AccountsProvider";
+import { invitationRoute } from "../../accounts/invitation";
+import { hostOf } from "../../accounts/summary";
+import { useApi } from "../../api/useApi";
+import { useTranslation } from "../../i18n";
+import type { InvitationChoice } from "../../navigation/types";
+import { useSession } from "../../session/SessionProvider";
+import { useSpace } from "../../space/SpaceProvider";
+import { lift } from "../../theme/lift";
+import { styleCache } from "../../theme/themedStyles";
+import { useTheme, useThemedStyles } from "../../theme/useTheme";
+import { Banner } from "../../ui/Banner";
+import { Button } from "../../ui/Button";
+import { feel } from "../../ui/haptics";
+import { KeyboardForm } from "../../ui/KeyboardForm";
+import { SheetHeader } from "../../ui/SheetHeader";
+import { Text } from "../../ui/Text";
+import { TextField } from "../../ui/TextField";
+import { InvitationPaste } from "./InvitationPaste";
+
+type Mode = "join" | "create";
+
+/**
+ * Join or create a space (mockup 07). Shown instead of the tabs to an account in no space yet (the
+ * `gate`, with a way to sign out), and as a modal from "Switch space". Either way the app then opens
+ * in that space. An invitation to a space of another instance opens it there: at once when the phone
+ * is signed in there, else after signing in there or adding that instance (ADR 0007).
+ */
+export function JoinSpaceScreen({ gate = false }: { gate?: boolean }) {
+  const { acceptInvitation, createSpace } = useApi();
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { c, s } = theme;
+  const styles = useThemedStyles(makeStyles);
+  const { spaces, select } = useSpace();
+  const session = useSession();
+  const accounts = useAccounts();
+  // The gate is drawn before any navigator exists: no navigation there, and nothing to go back to.
+  const navigation = useContext(NavigationContext);
+  const [mode, setMode] = useState<Mode>("join");
+  const [invitation, setInvitation] = useState<InvitationChoice | null>(null);
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const enter = (space: Workspace) => {
+    select(space.id);
+    spaces.reload();
+    if (!gate) navigation?.goBack();
+  };
+
+  const join = async () => {
+    if (!invitation) return;
+    if (invitation.origin) {
+      // The other instance's own gate accepts it, once the phone is signed in there.
+      if (!gate) navigation?.goBack();
+      accounts.openInvitation(invitation.origin, invitation.token);
+      return;
+    }
+    setBusy(true);
+    setFailed(false);
+    try {
+      const space = await acceptInvitation(invitation.token);
+      feel("success");
+      enter(space);
+    } catch {
+      feel("failure");
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const create = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      const space = await createSpace(name.trim());
+      feel("success");
+      enter(space);
+    } catch {
+      feel("failure");
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const option = (key: Mode, icon: LucideIcon, tint: string, title: string, text: string) => {
+    const on = mode === key;
+    const Icon = icon;
+    return (
+      <Pressable
+        accessibilityRole="radio"
+        accessibilityState={{ selected: on }}
+        onPress={() => {
+          setMode(key);
+          setFailed(false);
+        }}
+        style={[
+          styles.option,
+          // The chosen way in: an edge in the focus colour (the ink in Ruchoir), lifted unless flat.
+          { backgroundColor: c.surface, borderColor: on ? s.focus : c.lineStrong },
+          on && styles.chosen,
+          on && lift(theme, 4, 4, c.ink),
+        ]}
+      >
+        <View style={[styles.tile, { backgroundColor: tint }]}>
+          <Icon size={20} color={c.onPastel} />
+        </View>
+        <View style={styles.flex}>
+          <Text variant="bodyStrong">{title}</Text>
+          <Text variant="small" tone="body">
+            {text}
+          </Text>
+        </View>
+      </Pressable>
+    );
+  };
+
+  const footer =
+    mode === "create" ? (
+      <View style={styles.footer}>
+        {failed ? <Banner tone="danger" text={t("joinSpace.createFailed")} /> : null}
+        <Button label={t("joinSpace.create")} onPress={() => void create()} busy={busy} disabled={!name.trim()} />
+      </View>
+    ) : invitation ? (
+      <View style={styles.footer}>
+        {failed ? <Banner tone="danger" text={t("joinSpace.joinFailed")} /> : null}
+        <Button label={t("joinSpace.join", { space: invitation.spaceName })} onPress={() => void join()} busy={busy} />
+      </View>
+    ) : null;
+
+  const body = (
+    <KeyboardForm contentContainerStyle={styles.content} footer={footer}>
+      {gate ? null : <SheetHeader title={t("joinSpace.modalTitle")} onClose={() => navigation?.goBack()} />}
+      <View style={styles.pad}>
+        {gate ? (
+          <View style={styles.head}>
+            <Text variant="display">{t("joinSpace.title")}</Text>
+            <Text tone="body">{t("joinSpace.subtitle")}</Text>
+          </View>
+        ) : null}
+        {option("join", Mail, c.sky, t("joinSpace.joinTitle"), t("joinSpace.joinText"))}
+        {option("create", Plus, c.mint, t("joinSpace.createTitle"), t("joinSpace.createText"))}
+        {mode === "join" ? (
+          invitation ? (
+            <View style={[styles.preview, { borderColor: c.line, backgroundColor: c.surface }]}>
+              <Text variant="bodyStrong">{invitation.spaceName}</Text>
+              {invitation.invitedBy ? (
+                <Text variant="small" tone="body">
+                  {t("invitation.invitedBy", { name: invitation.invitedBy })}
+                </Text>
+              ) : null}
+              {invitation.origin ? (
+                <Text variant="small" tone="muted">
+                  {invitationRoute(accounts.accounts, invitation.origin).kind === "switch"
+                    ? t("invitation.onServer", { host: hostOf(invitation.origin) })
+                    : t("invitation.signInThere", { host: hostOf(invitation.origin) })}
+                </Text>
+              ) : null}
+              <Button variant="link" label={t("joinSpace.otherLink")} onPress={() => setInvitation(null)} />
+            </View>
+          ) : (
+            <InvitationPaste switchServer={false} onResolved={setInvitation} />
+          )
+        ) : (
+          <TextField
+            label={t("joinSpace.name")}
+            hint={t("joinSpace.nameHint")}
+            placeholder={t("joinSpace.namePlaceholder")}
+            value={name}
+            onChangeText={setName}
+            autoFocus
+            onSubmitEditing={() => name.trim() && void create()}
+          />
+        )}
+        {gate ? <Button variant="ghost" label={t("account.signOut")} onPress={() => void session.signOut()} /> : null}
+      </View>
+    </KeyboardForm>
+  );
+
+  if (!gate) return <View style={[styles.fill, { backgroundColor: c.bg }]}>{body}</View>;
+  return (
+    <SafeAreaView style={[styles.fill, { backgroundColor: c.bg }]} edges={["top"]}>
+      {body}
+    </SafeAreaView>
+  );
+}
+
+const makeStyles = styleCache((shape) =>
+  StyleSheet.create({
+    fill: { flex: 1 },
+    flex: { flex: 1, minWidth: 0 },
+    content: { paddingBottom: 24 },
+    pad: { paddingHorizontal: 20, paddingTop: 16, gap: 16 },
+    head: { gap: 6, paddingTop: 8, paddingBottom: 4 },
+    option: { flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderRadius: shape.radius.l, borderWidth: shape.hairline },
+    chosen: { borderWidth: 2 },
+    tile: { width: 40, height: 40, borderRadius: shape.radius.m, alignItems: "center", justifyContent: "center" },
+    preview: { gap: 4, padding: 16, borderRadius: shape.radius.m, borderWidth: shape.hairline },
+    footer: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 10 },
+  }),
+);

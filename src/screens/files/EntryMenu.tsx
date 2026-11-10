@@ -1,0 +1,178 @@
+import { actionsFor, canManage, type ActionId } from "../../api/client/filesLogic/index.ts";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as Sharing from "expo-sharing";
+import { FileUp, FolderInput, FolderOpen, History, Info, PencilLine, PencilRuler, Send, Share as ShareIcon, Star, StarOff, Trash2, type LucideIcon } from "lucide-react-native";
+import { Alert, StyleSheet, View } from "react-native";
+
+import { useSupports } from "../../api/features";
+import { uploadLimit } from "../../api/limits";
+import { useApi } from "../../api/useApi";
+import { pickDocuments } from "../../compose/pick";
+
+import { entryOf } from "../../files/entry";
+import { downloadToCache } from "../../files/download";
+import { editAction, useOffice } from "../../files/office";
+import { useTranslation } from "../../i18n";
+import { useRealtimeActions } from "../../realtime/RealtimeProvider";
+import { useLocale } from "../../i18n/useLocale";
+import { fileSize } from "../../logic/format";
+import type { RootParams } from "../../navigation/types";
+import { useSession } from "../../session/SessionProvider";
+import { useSpace } from "../../space/SpaceProvider";
+import { styleCache } from "../../theme/themedStyles";
+import { useTheme, useThemedStyles } from "../../theme/useTheme";
+import { ActionRow } from "../../ui/ActionRow";
+import { FileIcon } from "../../ui/FileIcon";
+import { Sheet } from "../../ui/Sheet";
+import { Text } from "../../ui/Text";
+import { useToast } from "../../ui/Toast";
+import { useUploads } from "../../uploads/UploadsProvider";
+import { openEntry } from "./FileRow";
+
+/**
+ * What can be done with a file or a folder (the web's menu, `actionsFor`): each action only for who
+ * may, in the web's order. Opened from a row's "⋯" or a long press, and from the viewer.
+ */
+export function EntryMenu() {
+  const api = useApi();
+  const { deleteFile, fileDownloadUrl, setStarred } = api;
+  const { params } = useRoute<RouteProp<RootParams, "fileMenu">>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootParams>>();
+  const { t } = useTranslation();
+  const { c } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { locale } = useLocale();
+  const toast = useToast();
+  const { current } = useSpace();
+  const { state } = useSession();
+  const me = state.kind === "signedIn" ? state.user.id : undefined;
+  const file = params.file;
+  const entry = entryOf(file);
+  const manage = canManage(file, me, current?.role);
+  // On an instance that sets access by levels, a folder has Partage too: its access, which holds for all it contains.
+  const levels = useSupports("resource_rules");
+  const close = () => navigation.goBack();
+  const uploads = useUploads();
+  const { emit } = useRealtimeActions();
+
+  const office = useOffice();
+  const editing = file.kind === "folder" ? null : editAction(file.name, office);
+  const openEditor = () => navigation.replace("officeEditor", { fileId: file.id!, name: file.name, convert: editing === "convert" });
+
+  const run: Partial<Record<ActionId, () => void>> = {
+    open: () => {
+      close();
+      openEntry(api, navigation, file, params.path);
+    },
+    download: () => {
+      close();
+      void downloadToCache(api, { id: file.id!, name: file.name, url: fileDownloadUrl(file.id!), mime: file.mimeType, sizeBytes: file.sizeBytes })
+        .then((uri) => Sharing.shareAsync(uri, { mimeType: file.mimeType, dialogTitle: file.name }))
+        .catch(() => toast(t("files.actionFailed"), "failure"));
+    },
+    star: () => {
+      close();
+      const next = !file.starred;
+      setStarred(file.id!, next).then(
+        () => {
+          // Favourites are the person's own: no one else is told, so the screens are, here.
+          emit({ type: "files", spaceId: params.spaceId });
+          toast(next ? t("files.favoured") : t("files.unfavoured"));
+        },
+        () => toast(t("files.actionFailed"), "failure"),
+      );
+    },
+    rename: () =>
+      navigation.replace("fileName", { mode: "rename", spaceId: params.spaceId, folderId: file.parentFolderId, fileId: file.id, name: file.name }),
+    share: () =>
+      file.kind === "folder"
+        ? navigation.replace("access", { kind: "file", resourceId: file.id!, title: file.name, folder: true })
+        : navigation.replace("fileShare", { file, spaceId: params.spaceId }),
+    move: () => navigation.replace("fileMove", { file, spaceId: params.spaceId }),
+    newVersion: () =>
+      void pickDocuments(false).then(async (picked) => {
+        const chosen = picked[0];
+        if (!chosen) return;
+        const limit = await uploadLimit(api);
+        if (limit !== undefined && chosen.size !== undefined && chosen.size > limit) {
+          Alert.alert(t("attach.tooLargeTitle", { count: 1 }), t("attach.tooLargeText", { names: chosen.name, limit: fileSize(limit, locale) }));
+          return;
+        }
+        uploads.addVersion(chosen, { spaceId: params.spaceId, folderId: file.parentFolderId }, { id: file.id!, name: file.name });
+        close();
+      }),
+    versions: () => navigation.replace("fileVersions", { file, spaceId: params.spaceId }),
+    details: () => navigation.replace("fileDetails", { file, spaceId: params.spaceId, path: params.path }),
+    delete: () =>
+      Alert.alert(t("files.deleteConfirm", { name: file.name }), undefined, [
+        { text: t("compose.cancel"), style: "cancel" },
+        {
+          text: t("compose.delete"),
+          style: "destructive",
+          onPress: () => {
+            close();
+            deleteFile(file.id!).then(
+              () => toast(t("files.trashedOne")),
+              () => toast(t("files.deleteFailed"), "failure"),
+            );
+          },
+        },
+      ]),
+  };
+  const look: Partial<Record<ActionId, { icon: LucideIcon; tint?: string; title: string }>> = {
+    open: { icon: FolderOpen, tint: c.sky, title: t("today.open") },
+    download: { icon: ShareIcon, tint: c.violet, title: t("viewer.share") },
+    star: file.starred ? { icon: StarOff, tint: c.sun, title: t("sidebar.unfavourite") } : { icon: Star, tint: c.sun, title: t("sidebar.favourite") },
+    share: { icon: Send, tint: c.pink, title: t("files.share") },
+    rename: { icon: PencilLine, tint: c.mint, title: t("files.rename") },
+    move: { icon: FolderInput, tint: c.mint, title: t("files.move") },
+    newVersion: { icon: FileUp, tint: c.peach, title: t("files.uploadNewVersion") },
+    versions: { icon: History, title: t("files.versions") },
+    details: { icon: Info, title: t("details.title") },
+  };
+  const offered = actionsFor(entry, manage);
+  if (levels && entry.isFolder && entry.id && !offered.includes("share")) offered.splice(1, 0, "share");
+  const actions = offered.filter((a) => a !== "delete" && run[a] && look[a]);
+  const folder = file.kind === "folder";
+  return (
+    <Sheet>
+      <View style={styles.head}>
+        <FileIcon name={file.name} mime={file.mimeType} folder={folder} />
+        <View style={styles.grow}>
+          <Text variant="heading" numberOfLines={2}>
+            {file.name}
+          </Text>
+          <Text variant="small" tone="muted">
+            {folder ? t("files.typeFolder") : fileSize(file.sizeBytes, locale)}
+          </Text>
+        </View>
+      </View>
+      {editing ? (
+        <ActionRow
+          icon={PencilRuler}
+          tint={c.sky}
+          title={editing === "convert" ? t("office.convert") : t("office.openInEditor")}
+          subtitle={editing === "convert" ? t("office.convertHint") : undefined}
+          onPress={openEditor}
+        />
+      ) : null}
+      {actions.map((a) => (
+        <ActionRow key={a} icon={look[a]!.icon} tint={look[a]!.tint} title={look[a]!.title} onPress={run[a]} />
+      ))}
+      {actionsFor(entry, manage).includes("delete") ? (
+        <View style={[styles.danger, { borderTopColor: c.line }]}>
+          <ActionRow icon={Trash2} danger title={t("compose.delete")} onPress={run.delete} />
+        </View>
+      ) : null}
+    </Sheet>
+  );
+}
+
+const makeStyles = styleCache((shape) =>
+  StyleSheet.create({
+    head: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
+    grow: { flex: 1, minWidth: 0 },
+    danger: { marginTop: 6, paddingTop: 6, borderTopWidth: shape.hairline },
+  }),
+);

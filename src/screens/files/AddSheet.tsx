@@ -1,0 +1,86 @@
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { BlankKind } from "../../api/client/index.ts";
+import { Camera, FilePlus2, FileSpreadsheet, FileText, FolderPlus, Image as ImageIcon, Paperclip, Presentation } from "lucide-react-native";
+import { Alert } from "react-native";
+
+import { uploadLimit } from "../../api/limits";
+import { useApi } from "../../api/useApi";
+import { pickDocuments, pickFromCamera, pickFromGallery } from "../../compose/pick";
+import type { LocalFile } from "../../compose/useAttachments";
+import { useOffice } from "../../files/office";
+import { useTranslation } from "../../i18n";
+import { useLocale } from "../../i18n/useLocale";
+import { splitBySize } from "../../logic/attachments";
+import { fileSize } from "../../logic/format";
+import type { RootParams } from "../../navigation/types";
+import { useTheme } from "../../theme/useTheme";
+import { ActionRow } from "../../ui/ActionRow";
+import { Sheet } from "../../ui/Sheet";
+import { Text } from "../../ui/Text";
+import { useUploads } from "../../uploads/UploadsProvider";
+
+/**
+ * "Add a file" (mockup 21): a photo or a video, a photo taken now, a document of the phone, a scanned
+ * document, a new folder, and with the office editor a blank document, spreadsheet or presentation,
+ * into the folder the person is in. What is picked goes to the uploads;
+ * a name already taken there asks first.
+ */
+export function AddSheet() {
+  const api = useApi();
+  const { params } = useRoute<RouteProp<RootParams, "filesAdd">>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootParams>>();
+  const { t } = useTranslation();
+  const { c } = useTheme();
+  const { locale } = useLocale();
+  const uploads = useUploads();
+  const office = useOffice();
+  const blank = (kind: BlankKind) => navigation.replace("fileName", { mode: "document", kind, spaceId: params.spaceId, folderId: params.folderId });
+  const target = { spaceId: params.spaceId, folderId: params.folderId };
+
+  const hand = async (picked: LocalFile[]) => {
+    if (picked.length === 0) return;
+    const limit = await uploadLimit(api);
+    const { accepted, refused } = splitBySize(picked, limit);
+    if (limit !== undefined && refused.length > 0) {
+      Alert.alert(
+        t("attach.tooLargeTitle", { count: refused.length }),
+        t("attach.tooLargeText", { names: refused.map((f) => f.name).join(", "), limit: fileSize(limit, locale) }),
+      );
+    }
+    if (accepted.length === 0) return;
+    // A duplicate is the server's to find, in the whole space: it asks once the file has gone.
+    uploads.add(accepted, target, params.folderName);
+    navigation.goBack();
+  };
+
+  return (
+    <Sheet>
+      <Text variant="heading">{t("eventForm.addFile")}</Text>
+      <ActionRow icon={ImageIcon} tint={c.sky} title={t("attach.gallery")} subtitle={t("attach.galleryHint")} onPress={() => void pickFromGallery().then(hand)} />
+      <ActionRow icon={Camera} tint={c.peach} title={t("attach.camera")} subtitle={t("attach.cameraHint")} onPress={() => void pickFromCamera(t).then(hand)} />
+      <ActionRow icon={Paperclip} tint={c.violet} title={t("attach.document")} subtitle={t("attach.documentHint")} onPress={() => void pickDocuments().then(hand)} />
+      <ActionRow
+        icon={FileText}
+        tint={c.mint}
+        title={t("files.scanTitle")}
+        subtitle={t("files.scanHint")}
+        onPress={() => navigation.replace("scan", { spaceId: params.spaceId, folderId: params.folderId, folderName: params.folderName })}
+      />
+      <ActionRow
+        icon={FolderPlus}
+        tint={c.sun}
+        title={t("files.newFolder")}
+        subtitle={t("files.newFolderHint")}
+        onPress={() => navigation.replace("fileName", { mode: "create", spaceId: params.spaceId, folderId: params.folderId })}
+      />
+      {office ? (
+        <>
+          <ActionRow icon={FilePlus2} tint={c.sky} title={t("office.kindDocument")} onPress={() => blank("document")} />
+          <ActionRow icon={FileSpreadsheet} tint={c.mint} title={t("office.kindSpreadsheet")} onPress={() => blank("spreadsheet")} />
+          <ActionRow icon={Presentation} tint={c.peach} title={t("office.kindPresentation")} onPress={() => blank("presentation")} />
+        </>
+      ) : null}
+    </Sheet>
+  );
+}

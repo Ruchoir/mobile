@@ -1,0 +1,65 @@
+import { Hash, Megaphone } from "lucide-react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+
+import { styleCache } from "../theme/themedStyles";
+import { useTheme, useThemedStyles } from "../theme/useTheme";
+import { Avatar } from "../ui/Avatar";
+import { Text } from "../ui/Text";
+import { GroupTile } from "../screens/space/GroupParts";
+
+export type Suggestion =
+  | { kind: "person"; key: string; name: string; detail?: string; avatar?: string; bot?: boolean }
+  | { kind: "broadcast"; key: string; name: string; detail: string }
+  | { kind: "channel"; key: string; name: string; detail?: string }
+  | { kind: "group"; key: string; id: string; name: string; detail: string };
+
+/**
+ * What `@` or `#` can become, above the composer: people with their face and title, the two room-wide
+ * names with what they do, or channels. A tap inserts the name.
+ */
+export function MentionSuggestions({ items, onPick }: { items: Suggestion[]; onPick: (item: Suggestion) => void }) {
+  const { c, s } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  if (items.length === 0) return null;
+  return (
+    <View style={[styles.list, { backgroundColor: c.surface, borderBottomColor: c.line }]} accessibilityRole="menu">
+      {items.map((item) => (
+        <Pressable
+          key={item.key}
+          accessibilityRole="menuitem"
+          onPress={() => onPick(item)}
+          style={({ pressed }) => [styles.row, pressed && { backgroundColor: s.pressed }]}
+        >
+          {item.kind === "person" ? (
+            <Avatar name={item.name} src={item.avatar} kind={item.bot ? "bot" : "person"} size={32} />
+          ) : item.kind === "group" ? (
+            <GroupTile id={item.id} size={32} />
+          ) : (
+            <View style={[styles.tile, { backgroundColor: item.kind === "broadcast" ? c.sun : c.mint }]}>
+              {item.kind === "broadcast" ? <Megaphone size={16} color={c.onPastel} /> : <Hash size={16} color={c.onPastel} />}
+            </View>
+          )}
+          <View style={styles.text}>
+            <Text variant="bodyStrong" numberOfLines={1}>
+              {item.kind === "channel" ? `#${item.name}` : item.kind === "broadcast" || item.kind === "group" ? `@${item.name}` : item.name}
+            </Text>
+            {item.detail ? (
+              <Text variant="tiny" tone="muted" numberOfLines={1}>
+                {item.detail}
+              </Text>
+            ) : null}
+          </View>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+const makeStyles = styleCache((shape) =>
+  StyleSheet.create({
+    list: { borderBottomWidth: shape.hairline, paddingVertical: 4 },
+    row: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, minHeight: 52 },
+    tile: { width: 32, height: 32, borderRadius: shape.radius.m, alignItems: "center", justifyContent: "center" },
+    text: { flex: 1, minWidth: 0 },
+  }),
+);

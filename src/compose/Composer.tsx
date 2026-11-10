@@ -1,0 +1,322 @@
+/**
+ * The bar to write in (mockup 13): `+`, the field, send. Above it when needed, from the bar up: the
+ * files waiting to go, the edit banner, who is writing, and the `@` / `#` suggestions.
+ *
+ * A message goes through the outbox, which draws it at once and keeps it if it fails; the text of an
+ * unsent message is the conversation's draft, kept while the app runs.
+ */
+import type { Channel, Group, Member } from "../api/client/index.ts";
+import { Check, PenLine, Plus, Send } from "lucide-react-native";
+import { useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useTranslation } from "../i18n";
+import { sendPlan } from "../logic/attachments";
+import { composerRoom } from "../logic/keyboard";
+import { useTabletLayout } from "../layout/useWide";
+import { mentionableGroups, mentionOrder } from "../logic/groupMentions";
+import { activeToken, broadcastsFor, fold, insertToken, matchPeople } from "../logic/mentions";
+import { fonts } from "../theme/fonts";
+import { styleCache } from "../theme/themedStyles";
+import { useTheme, useThemedStyles } from "../theme/useTheme";
+import { feel } from "../ui/haptics";
+import { Text } from "../ui/Text";
+import { MentionSuggestions, type Suggestion } from "./MentionSuggestions";
+import { PendingFiles } from "./PendingFiles";
+import type { Attachments } from "./useAttachments";
+import { useOutbox } from "./useOutbox";
+import { useTypingSignal } from "./useTyping";
+
+const MAX_SUGGESTIONS = 5;
+
+export type Editing = { id: string; body: string };
+
+type Props = {
+  conversationId: string;
+  /** Where the draft is kept: the conversation's id, or the thread's. */
+  draftKey: string;
+  /** The message a thread reply answers. */
+  parentId?: string;
+  /**
+   * Under a thread's field, "Also send to #general": the reply goes to the channel too when ticked,
+   * for that reply only. Absent where it cannot (an instance without it, outside a thread).
+   */
+  alsoInChannelLabel?: string;
+  placeholder: string;
+  /** Who `@` suggests (the space's people), and the channels `#` does. */
+  people: Member[];
+  channels: Channel[];
+  /** Whether `@canal` and `@ici` are offered: in a channel, not in a private conversation. */
+  broadcasts: boolean;
+  /** The groups `@` can name, and the viewer's standing (a guest cannot mention one). */
+  groups?: Group[];
+  viewerRole?: string;
+  myUserId: string;
+  /** My messages on screen with these words, which the outbox must not take for the new one. */
+  baselineFor: (body: string) => string[];
+  /** The line "Léa is writing…", already worded. */
+  typing?: string;
+  /** A message being edited: the field holds its text, and sending saves it. */
+  editing?: Editing | null;
+  onSaveEdit?: (id: string, body: string) => void;
+  onCancelEdit?: () => void;
+  /** After a message is handed to the outbox (the list scrolls down to it). */
+  onSent?: () => void;
+  /** `+`: what can be added to the message. Without it, the button is not drawn. */
+  onAttach?: () => void;
+  /** The files waiting to go with the message (kept by the screen, so an edit does not lose them). */
+  attachments?: Attachments;
+};
+
+export function Composer(props: Props) {
+  const { conversationId, draftKey, parentId, people, channels, broadcasts, myUserId, editing, groups, viewerRole } = props;
+  const { t } = useTranslation();
+  const { c, s, shape } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const tablet = useTabletLayout();
+  const insets = useSafeAreaInsets();
+  // The bar keeps clear of the home indicator; with the keyboard up, its `KeyboardArea` (`composer`)
+  // lets that room go behind the keyboard, so it changes no size as the keyboard moves.
+  const barBottom = { paddingBottom: composerRoom(insets.bottom) };
+  const outbox = useOutbox();
+  const signalTyping = useTypingSignal(conversationId);
+  // The parent remounts the composer when the draft or the edited message changes (its `key`).
+  const [text, setText] = useState(() => (editing ? editing.body : outbox.draft(draftKey)));
+  const [cursor, setCursor] = useState(text.length);
+  // An edit starts with the cursor after the message's text, ready to add to it.
+  const [forced, setForced] = useState<{ start: number; end: number } | undefined>(() =>
+    editing ? { start: editing.body.length, end: editing.body.length } : undefined,
+  );
+  const input = useRef<TextInput>(null);
+
+  const mentionable = useMemo(() => (viewerRole === "guest" ? [] : (groups ?? []).map((g) => g.name)), [groups, viewerRole]);
+  const token = useMemo(() => activeToken(text, cursor, mentionable), [text, cursor, mentionable]);
+  const suggestions = useMemo<Suggestion[]>(() => {
+    if (!token) return [];
+    if (token.kind === "#") {
+      const q = fold(token.query);
+      return channels
+        .filter((ch) => ch.type !== "archived" && fold(ch.name).includes(q))
+        .slice(0, MAX_SUGGESTIONS)
+        .map((ch) => ({ kind: "channel", key: `#${ch.id}`, name: ch.name, detail: ch.topic }));
+    }
+    const rooms: Suggestion[] = broadcasts
+      ? broadcastsFor(token.query).map((name) => ({
+          kind: "broadcast",
+          key: `@${name}`,
+          name,
+          detail: name === "canal" ? t("compose.broadcastChannel") : t("compose.broadcastHere"),
+        }))
+      : [];
+    // Between the room-wide names and the people, as on the web: a group names several people at once.
+    const named: Suggestion[] = mentionableGroups(viewerRole, groups ?? [], token.query).map(
+      ({ group, members }): Suggestion => ({
+        kind: "group",
+        key: `g:${group.id}`,
+        id: group.id,
+        name: group.name,
+        detail: t("compose.groupLine", { count: members }),
+      }),
+    );
+    const found = matchPeople(
+      people.filter((p) => p.userId !== myUserId),
+      token.query,
+      MAX_SUGGESTIONS,
+    ).map(
+      (p): Suggestion => ({ kind: "person", key: p.userId, name: p.name, detail: p.title, avatar: p.avatarUrl, bot: p.bot }),
+    );
+    return mentionOrder({ rooms, groups: named, people: found }, MAX_SUGGESTIONS).map((hit) => hit.item);
+  }, [token, channels, people, broadcasts, groups, viewerRole, myUserId, t]);
+
+  const change = (next: string) => {
+    setText(next);
+    if (!editing) {
+      outbox.keepDraft(draftKey, next);
+      if (next.trim()) signalTyping();
+    }
+  };
+
+  const pick = (item: Suggestion) => {
+    if (!token) return;
+    const next = insertToken(text, token, item.name);
+    change(next.text);
+    setCursor(next.cursor);
+    setForced({ start: next.cursor, end: next.cursor });
+    // Writing goes on after the name, with the keyboard where it was.
+    input.current?.focus();
+  };
+
+  const files = editing ? undefined : props.attachments;
+  const body = text.trim();
+  // Files go with the text once they have all arrived; one that failed has to be retried or removed.
+  const waiting = !!files && (files.uploading || files.failed);
+  // Files picked before the right to attach was lost stay as chips, marked, and stay out of the message.
+  const plan = sendPlan({ canAttach: !!props.onAttach, body, pending: files?.files.length ?? 0, waiting });
+  const ready = editing ? body.length > 0 || (files?.attachments.length ?? 0) > 0 : plan.ready;
+
+  const [alsoInChannel, setAlsoInChannel] = useState(false);
+
+  const submit = () => {
+    if (!ready) return;
+    feel("send");
+    if (editing) {
+      props.onSaveEdit?.(editing.id, body);
+      return;
+    }
+    outbox.send({
+      conversationId,
+      body,
+      attachments: plan.withFiles ? (files?.attachments ?? []) : [],
+      images: plan.withFiles ? files?.images : undefined,
+      parentId,
+      alsoInChannel: parentId && alsoInChannel ? true : undefined,
+      baseline: props.baselineFor(body),
+    });
+    if (plan.withFiles) files?.clear();
+    // One reply at a time: the next stays in the thread unless asked again.
+    setAlsoInChannel(false);
+    change("");
+    setCursor(0);
+    props.onSent?.();
+  };
+
+  return (
+    <View style={[styles.box, { backgroundColor: c.surface, borderTopColor: c.line }, tablet && styles.boxTablet]}>
+      <MentionSuggestions items={suggestions} onPick={pick} />
+      {props.typing ? (
+        <Text variant="tiny" tone="muted" numberOfLines={1} style={styles.typing}>
+          {props.typing}
+        </Text>
+      ) : null}
+      {editing ? (
+        <View style={[styles.banner, { backgroundColor: s.selected }]}>
+          <PenLine size={16} color={c.ink} />
+          <Text variant="smallStrong" style={styles.grow}>
+            {t("compose.editing")}
+          </Text>
+          <Pressable accessibilityRole="button" hitSlop={10} onPress={props.onCancelEdit}>
+            <Text variant="smallStrong" tone="link">
+              {t("compose.cancel")}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {files ? <PendingFiles attachments={files} blocked={plan.blocked} /> : null}
+      {props.alsoInChannelLabel && !editing ? (
+        <Pressable
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: alsoInChannel }}
+          onPress={() => {
+            feel("choice");
+            setAlsoInChannel((on) => !on);
+          }}
+          hitSlop={6}
+          style={styles.also}
+        >
+          <View style={[styles.tick, { borderColor: alsoInChannel ? c.ink : c.controlLine, backgroundColor: alsoInChannel ? c.ink : "transparent" }]}>
+            {alsoInChannel ? <Check size={13} color={c.surface} strokeWidth={3} /> : null}
+          </View>
+          <Text variant="small" tone="muted" numberOfLines={1} style={styles.grow}>
+            {props.alsoInChannelLabel}
+          </Text>
+        </Pressable>
+      ) : null}
+      <View style={[styles.bar, barBottom, tablet && styles.barTablet]}>
+        {props.onAttach && !editing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("compose.add")}
+            onPress={props.onAttach}
+            style={({ pressed }) => [
+              styles.square,
+              tablet && styles.squareTablet,
+              { borderColor: tablet ? c.lineStrong : c.controlLine, borderWidth: shape.hairline, backgroundColor: c.surface },
+              pressed && { backgroundColor: s.pressed },
+            ]}
+          >
+            <Plus size={22} color={c.ink} />
+          </Pressable>
+        ) : null}
+        <TextInput
+          ref={input}
+          value={text}
+          onChangeText={change}
+          onSelectionChange={(e) => {
+            setCursor(e.nativeEvent.selection.end);
+            if (forced) setForced(undefined);
+          }}
+          selection={forced}
+          placeholder={props.placeholder}
+          placeholderTextColor={c.muted}
+          multiline
+          autoFocus={!!editing}
+          accessibilityLabel={props.placeholder}
+          style={[styles.field, tablet && styles.fieldTablet, { borderColor: c.controlLine, color: c.ink }]}
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={editing ? t("compose.save") : t("compose.send")}
+          accessibilityState={{ disabled: !ready }}
+          disabled={!ready}
+          onPress={submit}
+          style={({ pressed }) => [
+            styles.square,
+            tablet && styles.squareTablet,
+            tablet === "landscape" && styles.sendLabelled,
+            { borderColor: ready ? s.primary : s.edge, borderWidth: shape.edgeWidth },
+            ready && { backgroundColor: s.primary },
+            pressed && { opacity: 0.8 },
+          ]}
+        >
+          {files?.uploading ? (
+            <ActivityIndicator color={c.ink} />
+          ) : (
+            <>
+              <Send size={tablet === "landscape" ? 18 : 20} color={ready ? s.onPrimary : c.ink} />
+              {/* A tablet held wide says it in words, as its mockup does. */}
+              {tablet === "landscape" ? (
+                <Text variant="bodyStrong" style={{ color: ready ? s.onPrimary : c.ink }}>
+                  {editing ? t("compose.save") : t("compose.send")}
+                </Text>
+              ) : null}
+            </>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const makeStyles = styleCache((shape) =>
+  StyleSheet.create({
+    box: { borderTopWidth: shape.hairline },
+    // The tablet mockups' composer: 14 above, 20 aside, its row 820 wide at most, its controls 48 high.
+    boxTablet: { paddingHorizontal: 4 },
+    barTablet: { width: "100%", maxWidth: 820 + 40, alignSelf: "center", alignItems: "center", gap: 10, paddingHorizontal: 20, paddingTop: 14 },
+    squareTablet: { width: 48, height: 48 },
+    sendLabelled: { width: "auto", flexDirection: "row", gap: 8, paddingHorizontal: 20 },
+    fieldTablet: { minHeight: 48, paddingTop: 13, paddingBottom: 13, paddingHorizontal: 16 },
+    typing: { paddingHorizontal: 16, paddingTop: 6 },
+    banner: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
+    also: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 8 },
+    tick: { width: 18, height: 18, borderRadius: 5, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
+    grow: { flex: 1 },
+    bar: { flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 16, paddingTop: 8 },
+    square: { width: 44, height: 44, borderRadius: shape.radius.m, alignItems: "center", justifyContent: "center" },
+    field: {
+      flex: 1,
+      minHeight: 44,
+      // Five lines of text, then it scrolls.
+      maxHeight: 5 * 21 + 22,
+      borderWidth: shape.hairline,
+      borderRadius: shape.radius.m,
+      paddingHorizontal: 12,
+      paddingTop: 11,
+      paddingBottom: 11,
+      fontSize: 16,
+      lineHeight: 21,
+      fontFamily: fonts.sans,
+    },
+  }),
+);

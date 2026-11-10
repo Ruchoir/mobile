@@ -1,0 +1,97 @@
+import { charCount } from "../api/client/permissionsLogic/index.ts";
+import { Eye, EyeOff } from "lucide-react-native";
+import { useState, type Ref } from "react";
+import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from "react-native";
+
+import { useTranslation } from "../i18n";
+import { textScale } from "../prefs/prefs";
+import { usePrefs } from "../prefs/store";
+import { fonts } from "../theme/fonts";
+import { styleCache } from "../theme/themedStyles";
+import { useTheme, useThemedStyles } from "../theme/useTheme";
+import { Text } from "./Text";
+
+/**
+ * A labelled field: 52px tall (`minHeight` asks for a taller one), 16px text (below that, iOS zooms in on focus), the control outline of
+ * the design system. A secret field gets the eye that shows what was typed.
+ */
+export function TextField({
+  label,
+  hint,
+  error,
+  secret,
+  minHeight,
+  showCount,
+  ...input
+}: TextInputProps & { showCount?: boolean; label: string; hint?: string; error?: string; secret?: boolean; minHeight?: number; ref?: Ref<TextInput> }) {
+  const { c, s } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation();
+  const [shown, setShown] = useState(false);
+  const scale = textScale(usePrefs().textSize);
+  const Icon = shown ? EyeOff : Eye;
+
+  return (
+    <View style={styles.field}>
+      <Text variant="smallStrong">{label}</Text>
+      <View>
+        <TextInput
+          placeholderTextColor={c.muted}
+          {...input}
+          secureTextEntry={secret && !shown}
+          style={[
+            styles.input,
+            { borderColor: error ? s.danger : c.controlLine, backgroundColor: c.surface, color: c.ink },
+            secret && styles.withEye,
+            scale !== 1 && { fontSize: 16 * scale, minHeight: Math.round(52 * scale) },
+            input.multiline && styles.multiline,
+            // A taller field than the standard one (a pasted text), grown with the text size like the rest.
+            minHeight !== undefined && { minHeight: Math.round(minHeight * scale) },
+          ]}
+        />
+        {secret && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={shown ? t("field.hidePassword") : t("field.showPassword")}
+            onPress={() => setShown((v) => !v)}
+            style={styles.eye}
+          >
+            <Icon size={20} color={c.muted} />
+          </Pressable>
+        )}
+      </View>
+      {error ? (
+        <Text variant="tiny" tone="danger" accessibilityLiveRegion="polite">
+          {error}
+        </Text>
+      ) : hint ? (
+        <Text variant="tiny" tone="muted">
+          {hint}
+        </Text>
+      ) : null}
+      {showCount && input.maxLength ? (
+        <Text variant="tiny" tone="muted" style={styles.count} accessibilityElementsHidden importantForAccessibility="no">
+          {charCount(input.value ?? "", input.maxLength)}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+const makeStyles = styleCache((shape) =>
+  StyleSheet.create({
+    field: { gap: 6 },
+    count: { textAlign: "right" },
+    input: {
+      minHeight: 52,
+      paddingHorizontal: 14,
+      borderRadius: shape.radius.m,
+      borderWidth: shape.hairline,
+      fontSize: 16,
+      fontFamily: fonts.sans,
+    },
+    withEye: { paddingRight: 52 },
+    multiline: { minHeight: 96, paddingTop: 14, paddingBottom: 14, textAlignVertical: "top" },
+    eye: { position: "absolute", right: 4, top: 4, width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  }),
+);
