@@ -13,7 +13,6 @@
  * `ApiMessage` is the front `Message` with that string id.
  */
 import { ApiError } from "./http.ts";
-import type { EventCardDto } from "./calendarModel.ts";
 import type { AccountPrefsDoc } from "./accountPrefs.ts";
 import type {
   AccessChange,
@@ -373,7 +372,8 @@ export type ChannelDto = {
   name: string;
   type: string;
   topic?: string;
-  imported?: string;
+  /** The organisation's default channel, which every newcomer joins. */
+  is_default: boolean;
   favorite: boolean;
   notify_level?: string;
   muted?: boolean;
@@ -394,7 +394,6 @@ export type DirectMessageDto = {
   is_group: boolean;
   user_id?: string;
   participant_ids?: string[];
-  bot: boolean;
   unread: number;
   notify_level?: string;
   muted?: boolean;
@@ -403,61 +402,84 @@ export type DirectMessageDto = {
   last_message?: LastMessageDto;
 };
 
-export type PresenceDto = { user_id: string; presence: string };
+/** The hub's `MemberPresence`. */
+export type PresenceDto = { account: string; presence: string };
 
 export type ReactionDto = { emoji: string; count: number; mine: boolean; users: string[] };
 
+/**
+ * A file a message carries, as the chat gives it (`AttachmentDto`): held in the drive, read there
+ * with the `read` grant the chat drew in the caller's name. Live frames carry no grant: the message
+ * is read again (`GET /messages/{id}/attachments`) when its files must open.
+ */
 export type AttachmentDto = {
   file_id: string;
   name: string;
-  kind: string;
+  mime_type: string;
   size_bytes: number;
-  mime_type?: string;
-  version_id?: string;
-  has_thumbnail: boolean;
-  image_width?: number;
-  image_height?: number;
-  alt_text?: string;
-  deleted?: boolean;
+  position: number;
+  alt_text?: string | null;
+  /** The drive's addresses; absent when the chat has no drive. */
+  download_url?: string | null;
+  preview_url?: string | null;
+  thumbnail_url?: string | null;
+  /** The drive's `grant` query parameter for these addresses. */
+  grant?: string | null;
+  grant_expires_at?: string | null;
 };
 
+/** A card a product posted into a conversation (`MessageCardDto`): a calendar event, today. */
+export type MessageCardDto = {
+  product: string;
+  event_id: string;
+  title: string;
+  /** RFC 3339, or `YYYY-MM-DD` for an event lasting whole days. */
+  starts_at: string;
+  ends_at: string;
+  all_day: boolean;
+  location?: string | null;
+  /** Where the event opens, on the calendar's pages. */
+  link: string;
+};
+
+/** The chat's `MessageDto`. */
 export type MessageDto = {
   id: string;
   conversation_id: string;
-  author_id: string | null;
-  author_name: string | null;
+  author_id?: string | null;
+  author_name?: string | null;
   kind: string;
   body: string;
-  system_event?: string;
-  /** A calendar card's event, as the reader sees it. */
-  event?: EventCardDto;
-  parent_message_id?: string;
-  /** Absent from an instance without `reply_to_channel`. */
-  also_in_channel?: boolean;
-  thread_root?: { id: string; author_name?: string; excerpt: string };
+  system_event?: string | null;
+  /** The card a product posted (a `calendar.*` system message). */
+  card?: MessageCardDto | null;
+  parent_message_id?: string | null;
+  also_in_channel: boolean;
+  thread_root?: { id: string; author_name?: string | null; excerpt: string } | null;
   reply_count: number;
   /** The server's preview of the first link, once it has read the page. */
-  link?: {
+  link_preview?: {
+    id: string;
     url: string;
     domain: string;
-    title?: string;
-    description?: string;
-    color?: string;
-    image_url?: string;
-    image_width?: number;
-    image_height?: number;
-  };
-  /** Display names of the last repliers, most recent first. Absent when the thread is empty. */
+    title?: string | null;
+    description?: string | null;
+    color?: string | null;
+    image_url?: string | null;
+    image_width?: number | null;
+    image_height?: number | null;
+  } | null;
+  /** Display names of the last repliers, most recent first. */
   reply_authors?: string[];
-  last_reply_at?: string;
+  last_reply_at?: string | null;
   imported: boolean;
   edited: boolean;
   deleted: boolean;
   pinned: boolean;
-  pinned_by?: string;
+  pinned_by?: string | null;
   saved: boolean;
   created_at: string;
-  edited_at?: string;
+  edited_at?: string | null;
   reactions: ReactionDto[];
   mentions: string[];
   attachments: AttachmentDto[];
@@ -679,7 +701,6 @@ export function toChannel(dto: ChannelDto): Channel {
     unread: dto.unread,
     type: (["public", "private", "archived"].includes(dto.type) ? dto.type : "public") as ChannelType,
     topic: dto.topic,
-    imported: toImportSource(dto.imported),
     member: dto.member,
     allowedRoles: dto.allowed_roles,
     notify: toConversationNotify(dto.notify_level, dto.muted),
@@ -779,8 +800,7 @@ export function toDirectMessage(dto: DirectMessageDto): DirectMessage {
     name: dto.name,
     presence: "offline",
     unread: dto.unread,
-    bot: dto.bot || undefined,
-    userId: dto.user_id,
+    userId: dto.user_id ?? undefined,
     participantIds: dto.participant_ids,
     notify: toConversationNotify(dto.notify_level, dto.muted),
     hidden: dto.hidden === true,
@@ -788,12 +808,16 @@ export function toDirectMessage(dto: DirectMessageDto): DirectMessage {
   };
 }
 
+/**
+ * The chat's `MemberDto` (`user_id`, `display_name`, `role`). The rest is what the monolith gave
+ * and no product gives now: absent, the screens fall back to the name.
+ */
 export type MemberDto = {
   user_id: string;
   display_name: string;
   title?: string;
   role: string;
-  is_bot: boolean;
+  is_bot?: boolean;
   avatar_url?: string;
   role_ids?: string[];
   group_ids?: string[] | null;
@@ -813,7 +837,7 @@ export function toMember(m: MemberDto): Member {
     name: m.display_name,
     role: m.role,
     title: m.title ?? undefined,
-    bot: m.is_bot,
+    bot: m.is_bot === true,
     avatarUrl: m.avatar_url,
     roleIds: m.role_ids,
     groupIds: m.group_ids ?? undefined,
@@ -1204,32 +1228,90 @@ export type NotificationPreferences = {
   emailCalendarInvitations: boolean;
 };
 
-/** Each field and its name on the wire, so the two directions of the mapping cannot drift. */
-export const NOTIFICATION_FIELDS: [keyof NotificationPreferences, string][] = [
-  ["enabled", "enabled"],
-  ["sound", "sound"],
-  ["mentions", "mentions"],
-  ["channelMentions", "channel_mentions"],
-  ["replies", "replies"],
-  ["directMessages", "direct_messages"],
-  ["reactions", "reactions"],
-  ["edits", "edits"],
-  ["messages", "messages"],
-  ["quietHours", "quiet_hours"],
-  ["quietFrom", "quiet_from"],
-  ["quietTo", "quiet_to"],
-  ["utcOffsetMinutes", "utc_offset_minutes"],
-  ["email", "email"],
-  ["emailMentions", "email_mentions"],
-  ["emailBroadcasts", "email_broadcasts"],
-  ["emailReplies", "email_replies"],
-  ["emailDirectMessages", "email_direct_messages"],
-  ["emailMessages", "email_messages"],
-  ["calendarReminders", "calendar_reminders"],
-  ["emailCalendarReminders", "email_calendar_reminders"],
-  ["calendarInvitations", "calendar_invitations"],
-  ["emailCalendarInvitations", "email_calendar_invitations"],
-];
+/** The hub's categories of notification (`Categories`): each is on unless turned off. */
+type CategoriesDto = Partial<Record<"activity" | "direct" | "invitation" | "mention" | "notice" | "reminder" | "reply", boolean>>;
+
+/** The hub's `NotificationPrefs`. */
+export type NotificationPrefsDto = {
+  enabled?: boolean;
+  sound?: boolean;
+  /** What reaches the person in the app and by push. */
+  app?: CategoriesDto;
+  email?: boolean;
+  email_categories?: CategoriesDto;
+  quiet_hours?: boolean;
+  quiet_from?: string;
+  quiet_to?: string;
+  utc_offset_minutes?: number;
+};
+
+/**
+ * The screen's switches from the hub's categories. The hub has one category where the screen had
+ * two switches (`mention` for personal and channel-wide mentions, `activity` for reactions and
+ * edits): both switches show the category, and the first of the pair sets it.
+ */
+export function fromNotificationPrefs(dto: NotificationPrefsDto): NotificationPreferences {
+  const app = dto.app ?? {};
+  const mail = dto.email_categories ?? {};
+  const on = (value: boolean | undefined) => value !== false;
+  return {
+    enabled: on(dto.enabled),
+    sound: on(dto.sound),
+    mentions: on(app.mention),
+    channelMentions: on(app.mention),
+    replies: on(app.reply),
+    directMessages: on(app.direct),
+    reactions: on(app.activity),
+    edits: on(app.activity),
+    messages: on(app.notice),
+    quietHours: dto.quiet_hours === true,
+    quietFrom: dto.quiet_from ?? "22:00",
+    quietTo: dto.quiet_to ?? "08:00",
+    utcOffsetMinutes: dto.utc_offset_minutes ?? 0,
+    email: on(dto.email),
+    emailMentions: on(mail.mention),
+    emailBroadcasts: on(mail.mention),
+    emailReplies: on(mail.reply),
+    emailDirectMessages: on(mail.direct),
+    emailMessages: on(mail.notice),
+    calendarReminders: on(app.reminder),
+    emailCalendarReminders: on(mail.reminder),
+    calendarInvitations: on(app.invitation),
+    emailCalendarInvitations: on(mail.invitation),
+  };
+}
+
+/** The hub's `NotificationPrefs` from the screen's switches (see `fromNotificationPrefs`). */
+export function toNotificationPrefs(prefs: NotificationPreferences): NotificationPrefsDto {
+  return {
+    enabled: prefs.enabled,
+    sound: prefs.sound,
+    app: {
+      mention: prefs.mentions,
+      reply: prefs.replies,
+      direct: prefs.directMessages,
+      activity: prefs.reactions,
+      notice: prefs.messages,
+      reminder: prefs.calendarReminders,
+      invitation: prefs.calendarInvitations,
+    },
+    email: prefs.email,
+    email_categories: {
+      mention: prefs.emailMentions,
+      reply: prefs.emailReplies,
+      direct: prefs.emailDirectMessages,
+      notice: prefs.emailMessages,
+      reminder: prefs.emailCalendarReminders,
+      invitation: prefs.emailCalendarInvitations,
+      // Reactions and edits never go by mail.
+      activity: false,
+    },
+    quiet_hours: prefs.quietHours,
+    quiet_from: prefs.quietFrom,
+    quiet_to: prefs.quietTo,
+    utc_offset_minutes: prefs.utcOffsetMinutes,
+  };
+}
 
 /** Whether the instance sends Web Push, and the key a browser subscribes against. */
 export type PushConfig = { available: boolean; publicKey?: string };
@@ -1250,7 +1332,7 @@ export type SearchHits = { messages: SearchMessage[]; files: FileHit[] };
 
 export type FileDto = {
   id: string;
-  space_id: string;
+  organisation_id: string;
   name: string;
   kind: string;
   is_folder: boolean;
@@ -1272,8 +1354,9 @@ export type FileDto = {
   modified_by_name?: string;
   child_count?: number;
   starred?: boolean;
-  editors?: { id: string; name: string }[];
-  my_permissions?: string[];
+  /** Who is editing it in the office editor, by account id. */
+  editors?: string[] | null;
+  my_permissions?: string[] | null;
 };
 
 export type FolderListingDto = {
@@ -1467,7 +1550,7 @@ export type OfficeSessionDto = {
   access_token_ttl: number;
   mode: OfficeMode;
   config: string;
-  member_name: string;
+  member_name?: string;
 };
 
 /** What the editor can do with a file of this name on this instance. */
@@ -1486,8 +1569,15 @@ export function officeActionFor(
 
 // --- Realtime (WebSocket) ---
 
-/** A decoded server-to-client realtime frame. `payload` shape depends on `type`. */
-export type RealtimeEnvelope = { v: number; type: string; conversation_id?: string; payload: unknown };
+/**
+ * A frame of the hub's live socket: a product's `ClientFrame` (`ruchoir-events`). `type` is named
+ * after its product (`chat.message.created`), `scope` is what it is about (a conversation), and the
+ * shape of `payload` depends on `type` (`../hub/live.ts`).
+ */
+export type RealtimeEnvelope = { v: number; type: string; scope?: string; payload: unknown };
+
+/** What `hub.inbox.new` says: something reached the inbox, read it again for the entry itself. */
+export type InboxArrival = { kind: string; category: string; organisationId?: string };
 
 /** A reaction delta carried by a `reaction.added` / `reaction.removed` event. */
 export type RealtimeReaction = { messageId: string; emoji: string; userId: string; added: boolean };
@@ -1589,7 +1679,8 @@ export type RealtimeHandlers = {
   /** A channel was deleted, with its history: it leaves the sidebar and the open conversation. */
   onChannelDeleted?: (spaceId: string, channelId: string) => void;
   onPresence?: (userId: string, presence: Presence) => void;
-  onNotification?: (notification: ApiNotification) => void;
+  /** Something reached the person's inbox (`hub.inbox.new`): the entry is read from the inbox. */
+  onNotification?: (arrival: InboxArrival) => void;
   /** Some of the person's notifications were read, on this device or another one. */
   onNotificationsRead?: (read: NotificationsRead) => void;
   onTyping?: (conversationId: string, userId: string) => void;
@@ -1598,7 +1689,7 @@ export type RealtimeHandlers = {
   /** Files were removed from a space: anything showing them has to stop offering them. */
   onFilesDeleted?: (spaceId: string, fileIds: string[]) => void;
   /** A file gained a version, or the server created one (a blank document, a converted copy). */
-  onFilesUpdated?: (spaceId: string, file: SpaceFile, conversationId?: string) => void;
+  onFilesUpdated?: (spaceId: string, folderId?: string) => void;
   /** Who is editing a file in the office editor changed. */
   onFilesEditing?: (spaceId: string, fileId: string, editors: FileEditor[]) => void;
   /** A calendar, its settings or its events changed: whatever shows it reloads. */
@@ -1607,47 +1698,6 @@ export type RealtimeHandlers = {
 
 /** A live realtime connection: close it on teardown, and signal typing over it. */
 export type RealtimeConnection = { close: () => void; sendTyping: (conversationId: string) => void };
-
-/** Every event the server names. Needed by name because `EventSource` only routes named events. */
-export const REALTIME_EVENTS = [
-  "message.created",
-  "message.updated",
-  "message.deleted",
-  "message.pinned",
-  "message.unpinned",
-  "message.saved",
-  "message.unsaved",
-  "reaction.added",
-  "reaction.removed",
-  "channel.created",
-  "channel.updated",
-  "channel.deleted",
-  "member.joined",
-  "member.left",
-  "member.role_changed",
-  "permissions.changed",
-  "member.updated",
-  "space.updated",
-  "space.removed",
-  "preferences.updated",
-  "dm.hidden",
-  "channels.reordered",
-  "channel.membership",
-  "presence",
-  "notification.created",
-  "typing",
-  "read.updated",
-  "files.deleted",
-  "files.updated",
-  "files.editing",
-  "calendar.changed",
-] as const;
-
-/** How many failed WebSocket attempts, none of which ever opened, before falling back to SSE. */
-export const WS_ATTEMPTS_BEFORE_SSE = 2;
-
-/** Whether this runtime has `EventSource` (browsers do, React Native does not). */
-export const canFallBackToSse = () => typeof EventSource !== "undefined";
 
 // --- Bringing a workspace over from another product ----------------------------------------------
 //

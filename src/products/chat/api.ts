@@ -5,13 +5,13 @@
  * Each call is the route of the product, made with its own access token (`../http`).
  */
 import type { Transport } from "../shared/http.ts";
-import { toEventCard } from "../shared/calendarModel.ts";
-import { type Channel, type ChannelType, type ConversationNotify, type DirectMessage, type InlineImage, type MessageAttachment, type MessageKind } from "../shared/types.ts";
-import { attachmentIcon, iconForSystemEvent, isSystemEvent, toChannel, toDirectMessage, toMember, toReaction } from "../shared/model.ts";
-import type { ApiMessage, AttachmentDto, ChannelDto, DirectMessageDto, Member, MemberDto, MessageDto, MessagePage, MessagePageDto, ReadCursor, SavedMessage, SpaceChanges, SpaceIdentity } from "../shared/model.ts";
+import { toMessage } from "./model.ts";
+import { type Channel, type ChannelType, type ConversationNotify, type DirectMessage } from "../shared/types.ts";
+import { toChannel, toDirectMessage, toMember } from "../shared/model.ts";
+import type { ApiMessage, ChannelDto, DirectMessageDto, Member, MemberDto, MessageDto, MessagePage, MessagePageDto, ReadCursor, SavedMessage, SpaceChanges } from "../shared/model.ts";
 
 export function createChatApi(transport: Transport) {
-  const { apiGet, apiPost, apiPut, apiPatch, apiDelete, apiBase } = transport;
+  const { apiGet, apiPost, apiPut, apiPatch, apiDelete } = transport;
 
   /**
    * `PUT /organisations/{id}/channel-order`: the space's channels, first to last, as the caller sees them.
@@ -21,13 +21,13 @@ export function createChatApi(transport: Transport) {
     await apiPut<void>(`/organisations/${spaceId}/channel-order`, { channel_ids: channelIds });
   }
 
-  /** Choose the public channel every newly invited person joins. Space administrators may change it. */
-  async function setDefaultChannel(spaceId: string, channelId: string): Promise<SpaceIdentity> {
-    const dto = await apiPut<{ id: string; name: string; slug: string; icon_url: string | null; default_channel_id?: string }>(
-      `/organisations/${spaceId}/default-channel`,
-      { channel_id: channelId },
-    );
-    return { id: dto.id, name: dto.name, slug: dto.slug, iconUrl: dto.icon_url ?? undefined, defaultChannelId: dto.default_channel_id };
+  /**
+   * `PUT /organisations/{id}/default-channel`: choose the public channel every newcomer joins.
+   * Administrators only. Answers the channel chosen.
+   */
+  async function setDefaultChannel(spaceId: string, channelId: string): Promise<string> {
+    const dto = await apiPut<{ channel_id: string }>(`/organisations/${spaceId}/default-channel`, { channel_id: channelId });
+    return dto.channel_id;
   }
 
   /** `GET /organisations/{id}/channels`: the channels the caller can see in a space. */
@@ -125,7 +125,7 @@ export function createChatApi(transport: Transport) {
       name: m.display_name,
       role: m.role,
       title: m.title,
-      bot: m.is_bot,
+      bot: m.is_bot === true,
       avatarUrl: m.avatar_url,
     }));
   }
@@ -259,16 +259,16 @@ export function createChatApi(transport: Transport) {
    * switched space, and surviving both is the point of a bookmark.
    */
   async function getSavedMessages(signal?: AbortSignal): Promise<SavedMessage[]> {
-    const rows = await apiGet<(MessageDto & { space_id: string; space_name: string; channel_name?: string })[]>(
+    const rows = await apiGet<(MessageDto & { organisation_id: string; organisation_name: string; channel_name?: string | null })[]>(
       "/me/saved",
       signal,
     );
     return rows.map((row) => ({
       message: toMessage(row),
       conversationId: row.conversation_id,
-      spaceId: row.space_id,
-      spaceName: row.space_name,
-      channelName: row.channel_name,
+      spaceId: row.organisation_id,
+      spaceName: row.organisation_name,
+      channelName: row.channel_name ?? undefined,
     }));
   }
 
@@ -296,117 +296,6 @@ export function createChatApi(transport: Transport) {
     else await apiDelete<void>(`/channels/${channelId}/pins/${messageId}`);
   }
 
-  // --- Mapping helpers ---
-
-  function toMessage(dto: MessageDto): ApiMessage {
-    const { attachment, attachments, image, images } = splitAttachments(dto.attachments);
-    return {
-      id: dto.id,
-      kind: (dto.kind === "system" ? "system" : "message") as MessageKind,
-      author: dto.author_name ?? "",
-      authorId: dto.author_id ?? undefined,
-      createdAt: dto.created_at,
-      body: dto.body,
-      // A known event is rendered from its sentence, with the body as its one detail when it has one.
-      // A system message with a body and no known event is older free text, shown as written.
-      system:
-        dto.kind === "system" && isSystemEvent(dto.system_event)
-          ? { event: dto.system_event, actor: dto.author_name ?? "", detail: dto.body || undefined }
-          : undefined,
-      systemIcon: dto.kind === "system" ? iconForSystemEvent(dto.system_event) : undefined,
-      eventCard: dto.event ? toEventCard(dto.event) : undefined,
-      attachment,
-      attachments,
-      image,
-      images,
-      reactions: dto.reactions.length > 0 ? dto.reactions.map(toReaction) : undefined,
-      parentId: dto.parent_message_id,
-      alsoInChannel: dto.also_in_channel || undefined,
-      threadRoot: dto.thread_root
-        ? { id: dto.thread_root.id, authorName: dto.thread_root.author_name, excerpt: dto.thread_root.excerpt }
-        : undefined,
-      replies: dto.reply_count > 0 ? dto.reply_count : undefined,
-      replyAuthors: dto.reply_authors?.length ? dto.reply_authors : undefined,
-      lastReplyAt: dto.last_reply_at,
-      imported: dto.imported || undefined,
-      pinned: dto.pinned || undefined,
-      pinnedBy: dto.pinned_by,
-      edited: dto.edited || undefined,
-      editedAt: dto.edited_at,
-      deleted: dto.deleted || undefined,
-      saved: dto.saved || undefined,
-      link: dto.link
-        ? {
-            url: dto.link.url,
-            domain: dto.link.domain,
-            title: dto.link.title,
-            description: dto.link.description,
-            // Only a plain hex colour reaches a style attribute.
-            color: dto.link.color && /^#[0-9a-f]{6}$/i.test(dto.link.color) ? dto.link.color : undefined,
-            imageUrl: dto.link.image_url,
-            imageWidth: dto.link.image_width,
-            imageHeight: dto.link.image_height,
-          }
-        : undefined,
-    };
-  }
-
-  /**
-   * Keep attachment order while retaining the first-item aliases used by compact legacy views.
-   */
-  function splitAttachments(attachments: AttachmentDto[]): {
-    attachment?: MessageAttachment;
-    attachments?: MessageAttachment[];
-    image?: InlineImage;
-    images?: InlineImage[];
-  } {
-    const attachmentsOut: MessageAttachment[] = [];
-    const imagesOut: InlineImage[] = [];
-    for (const a of attachments) {
-      // A file removed from the space keeps its place in the message, without a link: every URL to
-      // its bytes answers 404, and an image whose source 404s is a broken frame rather than an
-      // absence. What the message carried is still worth saying; what it carried is simply gone.
-      if (a.deleted) {
-        attachmentsOut.push({
-          fileId: a.file_id,
-          name: a.name,
-          sizeBytes: a.size_bytes,
-          kind: attachmentIcon(a.kind),
-          deleted: true,
-        });
-        continue;
-      }
-      if (a.kind === "image" && a.image_width && a.image_height) {
-        imagesOut.push({
-          fileId: a.file_id,
-          alt: a.alt_text ?? a.name,
-          name: a.name,
-          width: a.image_width,
-          height: a.image_height,
-          // Served by the API, never by the object store: the browser never talks to it directly.
-          // `preview` is the original bytes, so opening it in a tab shows full quality.
-          src: `${apiBase()}/files/${a.file_id}/preview`,
-          downloadUrl: `${apiBase()}/files/${a.file_id}/download`,
-        });
-      } else {
-        attachmentsOut.push({
-          fileId: a.file_id,
-          name: a.name,
-          sizeBytes: a.size_bytes,
-          kind: attachmentIcon(a.kind),
-          url: `${apiBase()}/files/${a.file_id}/download`,
-          previewUrl: `${apiBase()}/files/${a.file_id}/preview`,
-        });
-      }
-    }
-    return {
-      attachment: attachmentsOut[0],
-      attachments: attachmentsOut.length ? attachmentsOut : undefined,
-      image: imagesOut[0],
-      images: imagesOut.length ? imagesOut : undefined,
-    };
-  }
-
   // --- Notifications ---
 
   /**
@@ -421,6 +310,14 @@ export function createChatApi(transport: Transport) {
       signal,
     );
     return rows.map((r) => ({ userId: r.user_id, lastReadMessageId: r.last_read_message_id }));
+  }
+
+  /**
+   * `POST /conversations/{id}/typing`: say the caller is typing there. Best-effort: the chat drops
+   * signals that come too often, and one nobody receives is not worth reporting.
+   */
+  function sendTyping(conversationId: string): void {
+    void apiPost<void>(`/conversations/${conversationId}/typing`).catch(() => {});
   }
 
   /** `PUT /me/dms/{id}/hidden`: hide a direct conversation from the person's own list, or bring it back. */
@@ -448,7 +345,7 @@ export function createChatApi(transport: Transport) {
 
 
   return {
-    setChannelOrder, getChannels, createChannel, setChannelFavorite, deleteChannel, updateChannel, joinChannel, leaveChannel, getDirectMessages, listChannelMembers, addChannelMembers, setChannelMemberRole, removeChannelMember, createDm, sendMessage, editMessage, deleteMessage, getReplies, addReaction, removeReaction, setReadCursor, setMessageSaved, getPinnedMessages, setMessagePinned, setDmHidden, getRecentReactions, saveConversationNotify, getChannelMessages, getChanges, getSavedMessages, getReadCursors, getSpaceMembers, setDefaultChannel,
+    setChannelOrder, getChannels, createChannel, setChannelFavorite, deleteChannel, updateChannel, joinChannel, leaveChannel, getDirectMessages, listChannelMembers, addChannelMembers, setChannelMemberRole, removeChannelMember, createDm, sendMessage, editMessage, deleteMessage, getReplies, addReaction, removeReaction, setReadCursor, setMessageSaved, getPinnedMessages, setMessagePinned, setDmHidden, getRecentReactions, saveConversationNotify, getChannelMessages, getChanges, getSavedMessages, getReadCursors, getSpaceMembers, setDefaultChannel, sendTyping,
   };
 }
 

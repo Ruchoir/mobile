@@ -5,12 +5,11 @@
  * Each call is the route of the product, made with its own access token (`../http`).
  */
 import type { Transport } from "../shared/http.ts";
-import { toEventCard } from "../shared/calendarModel.ts";
 import { ApiError, apiErrorMessage } from "../shared/http.ts";
 import { multipartBody } from "../shared/multipart.ts";
-import { type InlineImage, type MessageAttachment, type MessageKind, type OfficeSession, type SpaceFile } from "../shared/types.ts";
-import { appendPart, attachmentIcon, iconForSystemEvent, isSystemEvent, toImportSource, toPublicLink, toReaction, toSpaceFileKind } from "../shared/model.ts";
-import type { ApiMessage, AttachmentDto, DuplicateAnswer, FileDto, FileLink, FileVersion, FilesView, FolderListing, FolderListingDto, LinkDto, MessageDto, OfficeSessionDto, PublicLink, PublicLinkDto, TrashEntry, TrashEntryDto, UploadDuplicate, UploadPart, UploadRequest, UploadedFile, VersionDto, ViewEntry, ViewEntryDto } from "../shared/model.ts";
+import { type OfficeSession, type SpaceFile } from "../shared/types.ts";
+import { appendPart, toImportSource, toPublicLink, toSpaceFileKind } from "../shared/model.ts";
+import type { DuplicateAnswer, FileDto, FileLink, FileVersion, FilesView, FolderListing, FolderListingDto, LinkDto, OfficeSessionDto, PublicLink, PublicLinkDto, TrashEntry, TrashEntryDto, UploadDuplicate, UploadPart, UploadRequest, UploadedFile, VersionDto, ViewEntry, ViewEntryDto } from "../shared/model.ts";
 
 export function createDriveApi(transport: Transport) {
   const { apiGet, apiPost, apiPut, apiPatch, apiDelete, apiBase, apiOrigin, authInit, clientOptions } = transport;
@@ -117,68 +116,6 @@ export function createDriveApi(transport: Transport) {
   }
 
 
-  // --- Mapping helpers ---
-
-
-  /**
-   * Keep attachment order while retaining the first-item aliases used by compact legacy views.
-   */
-  function splitAttachments(attachments: AttachmentDto[]): {
-    attachment?: MessageAttachment;
-    attachments?: MessageAttachment[];
-    image?: InlineImage;
-    images?: InlineImage[];
-  } {
-    const attachmentsOut: MessageAttachment[] = [];
-    const imagesOut: InlineImage[] = [];
-    for (const a of attachments) {
-      // A file removed from the space keeps its place in the message, without a link: every URL to
-      // its bytes answers 404, and an image whose source 404s is a broken frame rather than an
-      // absence. What the message carried is still worth saying; what it carried is simply gone.
-      if (a.deleted) {
-        attachmentsOut.push({
-          fileId: a.file_id,
-          name: a.name,
-          sizeBytes: a.size_bytes,
-          kind: attachmentIcon(a.kind),
-          deleted: true,
-        });
-        continue;
-      }
-      if (a.kind === "image" && a.image_width && a.image_height) {
-        imagesOut.push({
-          fileId: a.file_id,
-          alt: a.alt_text ?? a.name,
-          name: a.name,
-          width: a.image_width,
-          height: a.image_height,
-          // Served by the API, never by the object store: the browser never talks to it directly.
-          // `preview` is the original bytes, so opening it in a tab shows full quality.
-          src: `${apiBase()}/files/${a.file_id}/preview`,
-          downloadUrl: `${apiBase()}/files/${a.file_id}/download`,
-        });
-      } else {
-        attachmentsOut.push({
-          fileId: a.file_id,
-          name: a.name,
-          sizeBytes: a.size_bytes,
-          kind: attachmentIcon(a.kind),
-          url: `${apiBase()}/files/${a.file_id}/download`,
-          previewUrl: `${apiBase()}/files/${a.file_id}/preview`,
-        });
-      }
-    }
-    return {
-      attachment: attachmentsOut[0],
-      attachments: attachmentsOut.length ? attachmentsOut : undefined,
-      image: imagesOut[0],
-      images: imagesOut.length ? imagesOut : undefined,
-    };
-  }
-
-  // --- Search ---
-
-
   // --- Files ---
 
   function toSpaceFile(dto: FileDto): SpaceFile {
@@ -196,7 +133,8 @@ export function createDriveApi(transport: Transport) {
       // Generated and stored server-side at upload; served by the API, never by the object store.
       thumbnailUrl: dto.has_thumbnail ? `${apiBase()}/files/${dto.id}/thumbnail` : undefined,
       parentFolderId: dto.parent_folder_id,
-      editors: dto.editors ?? [],
+      // The drive names editors by account; the screens find their names among the members.
+      editors: (dto.editors ?? []).map((id) => ({ id, name: "" })),
       ownerId: dto.owner_id,
       modifiedBy: dto.modified_by_name,
       childCount: dto.child_count,
@@ -204,7 +142,7 @@ export function createDriveApi(transport: Transport) {
       mimeType: dto.mime_type,
       versionNo: dto.version_no,
       starred: dto.starred === true,
-      myPermissions: dto.my_permissions,
+      myPermissions: dto.my_permissions ?? undefined,
     };
   }
 
@@ -566,13 +504,13 @@ export function createDriveApi(transport: Transport) {
     });
     return {
       file: toSpaceFile(dto.file),
-      spaceId: dto.file.space_id,
+      spaceId: dto.file.organisation_id,
       url: dto.url,
       accessToken: dto.access_token,
       accessTokenTtl: dto.access_token_ttl,
       mode: dto.mode,
       config: dto.config,
-      memberName: dto.member_name,
+      memberName: dto.member_name ?? "",
     };
   }
 
