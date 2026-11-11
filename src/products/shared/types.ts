@@ -261,7 +261,7 @@ export type UsedIn = {
   parentId?: string;
 };
 
-// --- Access to a channel, a file or a calendar (permissions lot 4) ---
+// --- Access to a channel, a file or a calendar ---
 
 /** What a resource's access dialog is about. A folder is a `file`. */
 export type AccessKind = "channel" | "file" | "calendar";

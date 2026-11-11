@@ -1,5 +1,5 @@
 /**
- * The app lock (step 6c): when this phone's owner has turned it on (Security), the app asks for Face
+ * The app lock: when this phone's owner has turned it on (Security), the app asks for Face
  * ID, Touch ID or the fingerprint at launch and on coming back after a minute away
  * (`logic/lock.ts`), and for a six-digit PIN of its own when they fail or the phone has none
  * (`logic/pin.ts`). The phone's passcode does not open it. Five wrong PINs in a row, or "Forgot your

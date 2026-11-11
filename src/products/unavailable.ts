@@ -3,7 +3,7 @@
  * they had. Organisation and account management (members, roles, groups, invitations, licences,
  * the journal, the second factor, the password) is Propolis's, reached through its pages; the rest
  * is not in any product yet. Each rejects with `ProductUnavailable` (`client.ts`), and the screens
- * that need one are hidden. The restructuring plan lists them in its progress section.
+ * that need one are hidden.
  */
 import type { AdminUser, DropToken, EndedAccess, ImportFile, ImportJob, ImportPlan, ImportedPerson, InstanceSettings, InviteOutcome, LoginResult, Member, MfaState, PersonChoice, SearchHits, SessionUser, SignedIn, SpaceIdentity, UploadPart, UploadRequest, UploadedFile } from "./shared/model.ts";
 import type { Invitee, LinkableChannel } from "./shared/calendarModel.ts";

@@ -1,4 +1,4 @@
-// The widgets the app offers (step 6e): the agenda and the discussions.
+// The widgets the app offers: the agenda and the discussions.
 
 import SwiftUI
 import WidgetKit

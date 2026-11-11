@@ -1,5 +1,5 @@
 /**
- * The app's own `ruchoir://` links, which the widgets open (step 6e): a screen to go to, or nothing
+ * The app's own `ruchoir://` links, which the widgets open: a screen to go to, or nothing
  * for an address that is not one of them. `ruchoir://auth` and `ruchoir://passkey` belong to the
  * browser sign-in (`auth/browser.ts`), and the development launcher has its own: all left alone.
  * Free of React Native so Node tests it.
