@@ -1,5 +1,5 @@
 /**
- * The phone's own document scanner (step 6c): Apple's VisionKit on an iPhone, Google's ML Kit scanner
+ * The phone's own document scanner: Apple's VisionKit on an iPhone, Google's ML Kit scanner
  * on Android (through Google Play services), both finding the page's edges and straightening it,
  * page after page. `react-native-document-scanner-plugin` bridges them.
  *

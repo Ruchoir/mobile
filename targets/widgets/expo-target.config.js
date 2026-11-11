@@ -1,5 +1,5 @@
 /**
- * The iPhone's widgets (step 6e, mockup "Widgets iOS"): the agenda and the discussions, on the home
+ * The iPhone's widgets: the agenda and the discussions, on the home
  * screen (small, medium, large) and the lock screen. They read the instance's address and the session
  * token from the keychain group the app shares (`push/phone.ts`) and ask the instance themselves.
  * Built into the app by @bacons/apple-targets at prebuild; bundle id com.ruchoir.app.widgets.

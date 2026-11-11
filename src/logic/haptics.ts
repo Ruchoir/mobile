@@ -1,5 +1,5 @@
 /**
- * The app's haptics, as data: one feel per kind of moment, the same everywhere (spec step 6a).
+ * The app's haptics, as data: one feel per kind of moment, the same everywhere.
  *
  * Each pattern keeps the meaning Apple and Android give it: an impact for something that lands (a
  * menu opening under the finger, a message leaving), a selection tick while a choice changes, a

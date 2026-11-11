@@ -1,5 +1,5 @@
 /**
- * The addresses of the passage through the instance's web page (step 6f, `auth/browser.ts`): the
+ * The addresses of the passage through the instance's web page (`auth/browser.ts`): the
  * page the app opens, and the address the page sends the app back to. Kept free of the native
  * modules so Node tests them.
  */

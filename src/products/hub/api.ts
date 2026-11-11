@@ -13,7 +13,7 @@ import { dispatchFrame } from "./live.ts";
 export function createHubApi(transport: Transport) {
   const { apiRequest, apiGet, apiPost, apiPut, apiOrigin, clientOptions } = transport;
 
-  // --- Phone notifications (ADR 0006) ---
+  // --- Phone notifications (ADR 0002 of Ruchoir/hub) ---
 
   /**
    * `PUT /push/devices`: remember this phone for the signed-in account, or refresh it (the app does

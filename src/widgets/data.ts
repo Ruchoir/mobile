@@ -1,5 +1,5 @@
 /**
- * What the Android widgets show, computed from the instance's answers (step 6e): the next events and
+ * What the Android widgets show, computed from the instance's answers: the next events and
  * the unread count. The iPhone's widgets do the same in Swift (`targets/widgets`). Free of React
  * Native so Node tests it.
  */

@@ -1,5 +1,5 @@
 /**
- * One inbox for every instance (ADR 0007): the pages each instance returned, merged newest first.
+ * One inbox for every instance (ADR 0002): the pages each instance returned, merged newest first.
  * Free of React so Node tests it.
  *
  * Each instance pages its own inbox. Merged, a page boundary must not let an older item of one

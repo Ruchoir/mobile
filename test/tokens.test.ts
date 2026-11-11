@@ -52,7 +52,7 @@ test("every_accent_by_day_and_by_night_matches_tokens_css", () => {
   }
 });
 
-// --- The simplified styles (lot 4) ----------------------------------------------------------------
+// --- The simplified styles ------------------------------------------------------------------------
 
 
 /** `rgb(r g b / a)` laid over a hex colour, as hex; a hex colour as it is. */

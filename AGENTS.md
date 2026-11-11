@@ -121,8 +121,8 @@ and the Propolis SDK.
 
 **Status:** the app moved from `Ruchoir/ruchoir` (`apps/mobile`) with its history, and reaches an
 instance through its products: sign-in with Propolis (`@ruchoir/native-client`), then each product's
-API with its own access token (`src/products`). What no product serves yet is hidden; the list is in
-the restructuring plan's progress section.
+API with its own access token (`src/products`). What no product serves yet is hidden; the list is
+`src/products/unavailable.ts`.
 
 ### Boundaries
 

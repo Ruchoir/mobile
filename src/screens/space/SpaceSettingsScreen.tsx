@@ -1,6 +1,6 @@
 /**
  * The current organisation's settings. Its members, roles, groups, journal and licence are
- * Propolis's (decision 5 of the restructuring plan): each row opens Propolis's page in the
+ * Propolis's: each row opens Propolis's page in the
  * authentication browser, where the person's Propolis session lives.
  */
 import { ChevronRight, FileText, KeyRound, type LucideIcon, Shield, SlidersHorizontal, UserRound, Users } from "lucide-react-native";

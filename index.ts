@@ -9,5 +9,5 @@ import App from "./src/App";
 import { registerWidgets } from "./src/widgets";
 
 registerRootComponent(App);
-// The Android widgets are drawn by a task, the app not running (step 6e).
+// The Android widgets are drawn by a task, the app not running.
 registerWidgets();

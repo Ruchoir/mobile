@@ -636,7 +636,7 @@ export type InstanceSettings = {
   showInstanceAdmins: boolean;
   /**
    * Whether the instance sends Web Push. Pushes go through the push service of each reader's
-   * browser vendor, which the instance does not choose (ADR 0001), so an administrator may refuse it.
+   * browser vendor, which the instance does not choose (ADR 0001 of Ruchoir/hub), so an administrator may refuse it.
    */
   webPushEnabled: boolean;
 };
