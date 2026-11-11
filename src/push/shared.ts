@@ -1,5 +1,5 @@
 /**
- * The list of signed-in instances the app hands its extensions (ADR 0007): the iPhone's notification
+ * The list of signed-in instances the app hands its extensions (ADR 0002): the iPhone's notification
  * service and widgets read it in Swift, Android's background task and widgets here. Free of the
  * native modules so Node tests it.
  */

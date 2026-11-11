@@ -262,7 +262,7 @@ show. What every screen keeps:
 ```
 src/App.tsx            fonts and preferences, the accounts, then the sign-in flow or one scope per
                        signed-in instance, the active one drawing the space gate
-src/accounts/          the instances (ADR 0007): registry (domain and discovery) and Keychain store,
+src/accounts/          the instances (ADR 0002): registry (domain and discovery) and Keychain store,
                        one client per instance (clients.ts), AccountsProvider
                        (statuses, active instance, summaries, adding, signing out), InstanceScope (an
                        instance's client, socket, outbox, uploads, spaces), the merged inbox, the

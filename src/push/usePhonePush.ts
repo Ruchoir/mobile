@@ -1,10 +1,10 @@
 /**
- * The signed-in app's side of phone notifications (ADR 0006), mounted by the active instance's
+ * The signed-in app's side of phone notifications (ADR 0002 of Ruchoir/hub), mounted by the active instance's
  * `RootNavigator`:
  *
  * - a tap on a notification opens what it is about (`push/tap.ts`), the app's space switched first,
  *   also when the tap is what launched the app: the accounts show its instance first and the tap
- *   waits here for this navigation (`accounts/useLinkRouter`, ADR 0007);
+ *   waits here for this navigation (`accounts/useLinkRouter`, ADR 0002);
  * - once, the first time, the invitation to turn them on (mockup 08, `notificationsIntro`);
  * - while the app is in front, nothing is drawn by the system: the app shows what arrives itself;
  * - notifications read on another device leave this phone's screen, and the icon's count follows

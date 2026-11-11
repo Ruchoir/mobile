@@ -49,7 +49,7 @@ export default function App() {
 }
 
 /**
- * Which screen the accounts call for (ADR 0007): the sign-in flow while nothing is signed in, or
+ * Which screen the accounts call for (ADR 0002): the sign-in flow while nothing is signed in, or
  * while an instance is being added or renewed; else the app, one scope per signed-in instance, the
  * active one drawing the interface.
  */

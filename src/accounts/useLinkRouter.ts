@@ -1,5 +1,5 @@
 /**
- * The front door of a tapped notification and of the app's own `ruchoir://` links (ADR 0007), also
+ * The front door of a tapped notification and of the app's own `ruchoir://` links (ADR 0002), also
  * when one is what launched the app: the instance it is about is shown first, then the link waits
  * for that instance's navigation (`pendingLink.ts`), which opens it once ready.
  *

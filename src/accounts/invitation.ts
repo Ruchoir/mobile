@@ -1,5 +1,5 @@
 /**
- * Where an invitation to a space of another instance leads (ADR 0007): to that instance when the
+ * Where an invitation to a space of another instance leads (ADR 0002): to that instance when the
  * phone is signed in there, to signing in again when its session there ended, else to adding it.
  * Free of React so Node tests it.
  */

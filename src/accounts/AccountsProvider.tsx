@@ -1,5 +1,5 @@
 /**
- * The instances this phone is signed in to, and the one on screen (ADR 0007).
+ * The instances this phone is signed in to, and the one on screen (ADR 0002).
  *
  * Each instance has its own client (`products/client.ts`), which reaches its products with the
  * access tokens of its grant: two instances never share one, and a request started on one finishes

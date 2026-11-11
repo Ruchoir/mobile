@@ -21,7 +21,7 @@ import { STATUS_TEXT } from "./StatusSheet";
 
 /**
  * "My account" (mockup 11): who is signed in on the instance on screen, then their status, profile,
- * saved messages, preferences, security and help; the instances the phone holds (ADR 0007), each to
+ * saved messages, preferences, security and help; the instances the phone holds (ADR 0002), each to
  * sign out of, remove or sign in again, and adding one; and signing out. Each row opens its own
  * screen or sheet in place of this one.
  */

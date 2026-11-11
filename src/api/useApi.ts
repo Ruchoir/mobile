@@ -1,7 +1,7 @@
 /**
  * The client of the instance a screen belongs to.
  *
- * The app holds one `RuchoirClient` per instance (ADR 0007), gathering its products (`products/client.ts`). Every screen reaches the API through
+ * The app holds one `RuchoirClient` per instance (ADR 0002), gathering its products (`products/client.ts`). Every screen reaches the API through
  * the client of its instance, provided by the scope it is mounted in (`accounts/InstanceScope`), or
  * by the sign-in flow for the instance being added. A request started on one instance therefore
  * always finishes there, with that instance's token, whatever the person opens meanwhile.

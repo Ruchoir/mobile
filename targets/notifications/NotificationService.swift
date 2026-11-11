@@ -1,8 +1,8 @@
-// The iPhone's Notification Service Extension (ADR 0006).
+// The iPhone's Notification Service Extension (ADR 0002 of Ruchoir/hub).
 //
 // The relay's push carries nothing but a placeholder ("Ruchoir", "…") and `mutable-content`, so iOS
 // hands it here before showing it. The push does not say which instance sent it, so the extension
-// asks the hub of every instance the phone is signed in to for its unread inbox (ADR 0007;
+// asks the hub of every instance the phone is signed in to for its unread inbox (ADR 0002;
 // `GET /api/v1/me/inbox?unread=true`, decided on 2026-11-10), at once, with the hub access tokens
 // the app shares in its keychain group (`src/push/phone.ts`), and shows the newest entry of all
 // instead: its title and text (the `title` and `body` its product set in `variables`, else the

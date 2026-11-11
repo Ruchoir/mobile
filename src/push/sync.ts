@@ -1,5 +1,5 @@
 /**
- * The silent sync push (ADR 0006): a notification was read on another device, so the phone counts
+ * The silent sync push (ADR 0002 of Ruchoir/hub): a notification was read on another device, so the phone counts
  * its unread again for the icon and takes the read notifications off its screen. Free of the native
  * modules so Node tests it; `push/background.ts` does the asking and the dismissing.
  */

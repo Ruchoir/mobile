@@ -18,7 +18,7 @@ function buildNumber(env: Env): number | undefined {
 
 /**
  * The app's configuration. No `updates` URL: Ruchoir uses none of Expo's hosted services for what
- * it builds and ships (no EAS Build, Update or push), see `docs/adr/0005-native-apps.md`.
+ * it builds and ships (no EAS Build, Update or push), see `docs/adr/0001-native-apps.md`.
  *
  * One exception, for development only: Expo Go on a physical iPhone opens a project only when the
  * Expo CLI signs it, which takes an Expo project. Its id comes from the developer's untracked
@@ -29,7 +29,7 @@ export function appConfig(env: Env): ExpoConfig {
   const devProjectId = env.EXPO_DEV_PROJECT_ID?.trim();
   const build = buildNumber(env);
   // Given by the build workflow only: the Apple team the extensions are made for, and the Firebase
-  // project's file Android needs to receive pushes (ADR 0006).
+  // project's file Android needs to receive pushes (ADR 0002 of Ruchoir/hub).
   const appleTeamId = env.APPLE_TEAM_ID?.trim() || undefined;
   const googleServicesFile = env.GOOGLE_SERVICES_FILE?.trim() || undefined;
   return {
@@ -54,7 +54,7 @@ export function appConfig(env: Env): ExpoConfig {
       ...(appleTeamId ? { appleTeamId } : {}),
       entitlements: {
         // Shared with the notification extension (`targets/notifications`), which reads the
-        // instance and the session token there to show what a push is about (ADR 0006).
+        // instance and the session token there to show what a push is about (ADR 0002 of Ruchoir/hub).
         "keychain-access-groups": ["$(AppIdentifierPrefix)com.ruchoir.app.shared"],
       },
     },
@@ -72,7 +72,7 @@ export function appConfig(env: Env): ExpoConfig {
       "expo-font",
       "expo-localization",
       "expo-web-browser",
-      // Phone notifications (ADR 0006): every build is signed for the App Store (TestFlight too).
+      // Phone notifications (ADR 0002 of Ruchoir/hub): every build is signed for the App Store (TestFlight too).
       ["expo-notifications", { mode: "production", icon: "./assets/notification-icon.png", color: "#c65d45", enableBackgroundRemoteNotifications: true }],
       // The iPhone extensions written in Swift, under targets/ (the notification service).
       "@bacons/apple-targets",

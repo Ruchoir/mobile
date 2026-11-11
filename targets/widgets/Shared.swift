@@ -38,7 +38,7 @@ enum Product {
 }
 
 /// The items the app writes with expo-secure-store (service `ruchoir.push`) in the keychain group it
-/// shares with its extensions (`src/push/phone.ts`): every signed-in instance (ADR 0007), the space
+/// shares with its extensions (`src/push/phone.ts`): every signed-in instance (ADR 0002), the space
 /// on screen and its instance, the theme.
 enum SharedSession {
   private static func read(_ key: String) -> String? {

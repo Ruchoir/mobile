@@ -1,7 +1,7 @@
 /**
  * The session as the screens see it.
  *
- * Two providers answer `useSession()` (ADR 0007):
+ * Two providers answer `useSession()` (ADR 0002):
  *
  * - {@link SignInFlow}, around the screens before sign-in: finding an instance from its domain (the
  *   hub's manifest, `@ruchoir/native-client`), then signing in with its Propolis in the

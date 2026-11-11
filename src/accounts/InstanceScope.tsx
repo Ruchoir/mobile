@@ -1,5 +1,5 @@
 /**
- * Everything that belongs to one signed-in instance and lives as long as its session (ADR 0007): its
+ * Everything that belongs to one signed-in instance and lives as long as its session (ADR 0002): its
  * client (`useApi`), its session as the screens know it (`useSession`), its realtime socket, the
  * messages and files on their way out, and its spaces.
  *
