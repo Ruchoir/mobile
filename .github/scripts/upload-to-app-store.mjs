@@ -9,7 +9,10 @@ import { basename } from "node:path";
 
 import { api, loadKey } from "./app-store-connect.mjs";
 
-const { IPA_PATH: ipa, BUNDLE_ID: bundleId, VERSION: version, BUILD_NUMBER: build } = process.env;
+const ipa = process.env.IPA_PATH;
+const bundleId = process.env.BUNDLE_ID;
+const version = process.env.VERSION;
+const build = process.env.BUILD_NUMBER;
 const key = loadKey();
 
 function md5(path) {

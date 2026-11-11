@@ -56,7 +56,7 @@ try {
   if (!(error instanceof ApiError)) throw error;
   if (error.status === 401) {
     console.log(
-      "::error::App Store Connect refuses the key. The key ID, the issuer ID and the .p8 must belong to the same team key, and that key must not be revoked (AGENTS.md, "Releasing").",
+      "::error::App Store Connect refuses the key. The key ID, the issuer ID and the .p8 must belong to the same team key, and that key must not be revoked (AGENTS.md, Releasing).",
     );
   } else if (error.status === 403) {
     console.log(
