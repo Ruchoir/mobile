@@ -45,7 +45,7 @@ const asDate = (hhmm: string) => {
 const asTime = (date: Date) => `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 
 /**
- * Whether this phone receives notifications (ADR 0006): turning it on asks the system, then registers
+ * Whether this phone receives notifications (ADR 0002 of Ruchoir/hub): turning it on asks the system, then registers
  * the phone with the instance; off forgets it there. Refused in the phone's settings, the switch
  * leads there. Expo Go cannot receive them.
  */

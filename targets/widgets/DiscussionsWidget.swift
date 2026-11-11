@@ -50,7 +50,7 @@ struct Note: Identifiable {
   let place: String?
   let title: String
   let created_at: String
-  /// The instance it comes from (ADR 0007).
+  /// The instance it comes from (ADR 0002).
   let server: String
 }
 
@@ -127,7 +127,7 @@ struct DiscussionsProvider: TimelineProvider {
     guard Instance.signedIn else {
       return DiscussionsEntry(date: .now, unread: nil, notes: [], conversations: [], failed: false)
     }
-    // The unread count and the notes of every instance's hub (ADR 0007); the conversations of the
+    // The unread count and the notes of every instance's hub (ADR 0002); the conversations of the
     // space on screen, from the chat of its own instance.
     async let pages = Instance.everywhere("/me/inbox?unread=true&limit=10", as: InboxPage.self, product: .hub)
     async let spaces = Instance.get("/me/organisations", as: [SpaceSummary].self, product: .chat)

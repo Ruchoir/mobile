@@ -1,5 +1,5 @@
 /**
- * expo-notifications and expo-task-manager, loaded only in the real app (ADR 0006). Expo Go carries
+ * expo-notifications and expo-task-manager, loaded only in the real app (ADR 0002 of Ruchoir/hub). Expo Go carries
  * no push module for this app, and loading expo-notifications there throws at once ("Cannot find
  * native module 'ExpoPushTokenManager'"), which took the whole app down at launch: every other file
  * reaches them through here, and gets null in Expo Go.

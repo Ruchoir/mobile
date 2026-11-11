@@ -1,10 +1,10 @@
 /**
- * What a push hands the app's background task (ADR 0006). The relay's pushes carry nothing but
+ * What a push hands the app's background task (ADR 0002 of Ruchoir/hub). The relay's pushes carry nothing but
  * which of two they are, not even which instance sent them:
  *
  * - a wake (Android only: on an iPhone the Notification Service Extension, `targets/notifications`,
  *   handles it without the app): ask every instance the phone is signed in to what to show
- *   (`GET /api/v1/me/push/pending`, as the browsers' service worker does, ADR 0007), draw it as local
+ *   (`GET /api/v1/me/push/pending`, as the browsers' service worker does, ADR 0002), draw it as local
  *   notifications, each carrying its instance and id, and set the icon's count;
  * - a sync, silent, on both systems: something was read on another device. Count the unread again
  *   for the icon, and take the notifications read since off the screen (`syncRead`).

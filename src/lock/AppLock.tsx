@@ -57,7 +57,7 @@ type Ask =
 
 /**
  * `lockId` names the lock in the Keychain: one for the whole app since it holds several instances
- * (ADR 0007). `legacyIds` are the accounts a lock may have been kept under before, adopted once.
+ * (ADR 0002). `legacyIds` are the accounts a lock may have been kept under before, adopted once.
  */
 export function AppLock({
   lockId: userId,

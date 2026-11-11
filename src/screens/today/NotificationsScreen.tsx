@@ -88,7 +88,7 @@ const ICON = {
 type Older = Record<string, { items: ApiNotification[]; next?: string }>;
 
 /**
- * Pages of the inbox of every signed-in instance (ADR 0007), merged newest first
+ * Pages of the inbox of every signed-in instance (ADR 0002), merged newest first
  * (`@ruchoir/client/inbox`): the first pages reload live, the older ones are appended per instance.
  */
 export function NotificationsScreen() {

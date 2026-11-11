@@ -1,7 +1,7 @@
 /**
  * The space on screen. Every tab reads it; the space sheet changes it.
  *
- * One per signed-in instance (its scope, ADR 0007). The last one chosen there is remembered on the
+ * One per signed-in instance (its scope, ADR 0002). The last one chosen there is remembered on the
  * phone with the instance (it names nothing sensitive), so the app reopens where it was left; the
  * first space is the default.
  */

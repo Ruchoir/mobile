@@ -1,5 +1,5 @@
 /**
- * What the phone keeps between launches about its instances (ADR 0007): the registry (which
+ * What the phone keeps between launches about its instances (ADR 0002): the registry (which
  * instances, which is open, the last space of each, what each one's discovery found).
  *
  * It lives in the Keychain (Android: the Keystore), readable only while the phone is unlocked and

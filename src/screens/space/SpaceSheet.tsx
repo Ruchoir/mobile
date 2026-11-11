@@ -24,7 +24,7 @@ import { openPropolisPage } from "../../products/auth.ts";
 
 /**
  * "Switch space" (mockup 10): every space with its unread count, of every instance the phone is
- * signed in to, under a heading per instance when there is more than one (ADR 0007); what the current
+ * signed in to, under a heading per instance when there is more than one (ADR 0002); what the current
  * one offers, as the web's space menu does (inviting and its settings for its owner and admins, its
  * notifications and leaving it for everyone); then adding an instance, and creating or joining a
  * space on the one on screen.

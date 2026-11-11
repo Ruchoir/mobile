@@ -12,7 +12,7 @@ struct AgendaEvent: Codable, Identifiable {
   let all_day: Bool
   let start: String
   let end: String
-  /// The instance it comes from, set once read (ADR 0007): a tap opens it there.
+  /// The instance it comes from, set once read (ADR 0002): a tap opens it there.
   var server: String? = nil
 
   var id: String { event_id + start }
@@ -95,7 +95,7 @@ struct AgendaProvider: TimelineProvider {
     // From the start of today, so the day's count holds what is over too, to a week on.
     let from = Calendar.current.startOfDay(for: now)
     let path = "/calendar/occurrences?from=\(Instant.api(from))&to=\(Instant.api(from.addingTimeInterval(8 * 86_400)))"
-    // Every instance's events and calendars (ADR 0007), each event marked with its instance.
+    // Every instance's events and calendars (ADR 0002), each event marked with its instance.
     async let occurrences = Instance.everywhere(path, as: [AgendaEvent].self, product: .calendar)
     async let calendars = Instance.everywhere("/calendars", as: [CalendarInfo].self, product: .calendar)
     guard let answered = await occurrences else {

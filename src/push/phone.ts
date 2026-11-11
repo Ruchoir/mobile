@@ -1,5 +1,5 @@
 /**
- * This phone's notifications (ADR 0006), from every instance it is signed in to (ADR 0007).
+ * This phone's notifications (ADR 0002 of Ruchoir/hub), from every instance it is signed in to (ADR 0002).
  *
  * The phone registers its device token with each of its instances; an instance asks the publisher's
  * relay to wake it, with a constant push and never any content, which does not even say which

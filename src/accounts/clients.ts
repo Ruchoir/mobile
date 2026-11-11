@@ -1,5 +1,5 @@
 /**
- * The phone's clients, one per instance (ADR 0007), each reaching the products its manifest lists
+ * The phone's clients, one per instance (ADR 0002), each reaching the products its manifest lists
  * with their own access tokens (`products/client.ts`).
  *
  * Kept outside React: a client lives as long as the app. The tokens are the native client's, never

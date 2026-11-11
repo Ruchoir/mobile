@@ -1,5 +1,5 @@
 /**
- * What a notification carries for the app to open on a tap, and what it opens (ADR 0006). Shared by
+ * What a notification carries for the app to open on a tap, and what it opens (ADR 0002 of Ruchoir/hub). Shared by
  * Android's local notifications (`push/background.ts`) and iOS's extension, which writes the same
  * keys under the notification's `body` (`targets/notifications`). Free of the native modules so Node
  * tests it.
@@ -38,7 +38,7 @@ export function tapData(item: PendingItem): Record<string, string> {
 
 /**
  * The newest `limit` items of several instances' answers, newest first, each with its instance: a
- * phone signed in to several shows what is newest wherever it comes from (ADR 0007).
+ * phone signed in to several shows what is newest wherever it comes from (ADR 0002).
  */
 export function newestPending(answers: { server: string; items: PendingItem[] }[], limit: number): { server: string; item: PendingItem }[] {
   return answers

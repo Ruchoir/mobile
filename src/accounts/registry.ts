@@ -1,5 +1,5 @@
 /**
- * The instances the phone knows, as a plain value so it can be tested without a phone (ADR 0007).
+ * The instances the phone knows, as a plain value so it can be tested without a phone (ADR 0002).
  *
  * Each instance has a random `id` (what the scopes are named after), its domain (`origin`, the
  * key the phone knows it by) and what its discovery found (the hub's manifest and the products'

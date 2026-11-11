@@ -9,7 +9,7 @@
  *
  * They read the instances and session tokens the app shares (`push/phone.ts`), the space on screen,
  * its instance and the theme (`widgets/share.ts`), and ask the instances themselves, as the iPhone's
- * widgets do (`targets/widgets`): "Next" and "To answer" over every instance (ADR 0007), the
+ * widgets do (`targets/widgets`): "Next" and "To answer" over every instance (ADR 0002), the
  * conversations of the space on screen. A tap opens the app on a `ruchoir://` link
  * (`logic/deepLink.ts`).
  */

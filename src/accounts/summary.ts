@@ -1,5 +1,5 @@
 /**
- * What the space sheet and the badges draw from every instance's summary (ADR 0007). Free of React
+ * What the space sheet and the badges draw from every instance's summary (ADR 0002). Free of React
  * so Node tests it.
  */
 import type { Workspace } from "../products/index.ts";

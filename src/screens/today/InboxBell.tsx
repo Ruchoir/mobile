@@ -11,7 +11,7 @@ import { useTheme } from "../../theme/useTheme";
 import { Badge } from "../../ui/Badge";
 
 /**
- * Today's bell: the notifications screen, with how many are unread on every instance (ADR 0007):
+ * Today's bell: the notifications screen, with how many are unread on every instance (ADR 0002):
  * `here` is the count of the instance on screen, live; the others' come from their summaries.
  */
 export function InboxBell({ unread: here }: { unread: number }) {

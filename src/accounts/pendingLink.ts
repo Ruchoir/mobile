@@ -1,5 +1,5 @@
 /**
- * Where a tapped notification or an app link waits for the instance it belongs to (ADR 0007).
+ * Where a tapped notification or an app link waits for the instance it belongs to (ADR 0002).
  *
  * A tap can be about an instance other than the one on screen. The accounts switch to it first, which
  * mounts that instance's navigation afresh; the link waits here until that navigation is ready and

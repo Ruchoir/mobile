@@ -27,7 +27,7 @@ test("the_app_declares_no_custom_encryption", () => {
 });
 
 test("the_app_shares_a_keychain_group_with_its_notification_extension", () => {
-  // The extension reads the instance and the session token there (ADR 0006).
+  // The extension reads the instance and the session token there (ADR 0002 of Ruchoir/hub).
   assert.deepEqual(appConfig({}).ios?.entitlements?.["keychain-access-groups"], ["$(AppIdentifierPrefix)com.ruchoir.app.shared"]);
 });
 

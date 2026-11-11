@@ -1,7 +1,7 @@
 import { registerRootComponent } from "expo";
 
 // Android's notification task must be defined before anything else runs: a push can start the app
-// with no screen at all (ADR 0006).
+// with no screen at all (ADR 0002 of Ruchoir/hub).
 import "./src/push/background";
 // The background task that renews the tokens the extensions read, defined as early.
 import "./src/push/refresh";

@@ -76,7 +76,7 @@ export async function resetPin(userId: string): Promise<void> {
 }
 
 /**
- * A lock kept per account before the app held several instances (ADR 0007) becomes the app's: the
+ * A lock kept per account before the app held several instances (ADR 0002) becomes the app's: the
  * first of `candidates` with a lock on this phone gives it its flag, PIN and count, then forgets it.
  */
 export async function adoptLock(target: string, candidates: string[]): Promise<void> {
